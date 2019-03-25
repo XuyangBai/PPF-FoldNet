@@ -10,6 +10,6 @@ This repo is implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322v1) 
 
 
 ## TODO List
-[] dataset & dataloader for 3DMatch Dataset.
-[] Input Preparation. (Point coordinates -> point pair feature)
-[] Evaluation. (Recall on 3DMatch Dataset)
+- [] dataset & dataloader for 3DMatch Dataset.
+- [] Input Preparation. (Point coordinates -> point pair feature)
+- [] Evaluation. (Recall on 3DMatch Dataset)
