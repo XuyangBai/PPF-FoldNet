@@ -7,7 +7,7 @@ def get_dataloader(root, split='train', class_choice=None, classification=True, 
     dataset = ShapeNetDataset(
         root=root,
         split=split,
-        class_choice=None,
+        class_choice=class_choice,
         num_points=num_points,
         classification=classification,
     )
