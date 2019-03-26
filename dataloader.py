@@ -8,7 +8,7 @@ def get_dataloader(root, split='train', class_choice=None, classification=True, 
         root=root,
         split=split,
         class_choice=None,
-        npoints=num_points,
+        num_points=num_points,
         classification=classification,
     )
 
