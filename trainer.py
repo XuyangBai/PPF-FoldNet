@@ -48,7 +48,7 @@ class Trainer(object):
             'per_epoch_time': [],
             'total_time': []
         }
-
+        best_loss = 1000000000
         print('training start!!')
         start_time = time.time()
 
@@ -57,7 +57,10 @@ class Trainer(object):
             self.train_epoch(epoch, self.verbose)
 
             if (epoch + 1) % 5 == 0:
-                self.evaluate()
+                res = self.evaluate()
+                if res['loss'] < best_loss:
+                    best = res['loss']
+                    self._snapshot('best')
 
             if (epoch + 1) % 10 == 0:
                 self.scheduler.step()
