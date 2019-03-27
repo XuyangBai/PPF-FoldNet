@@ -80,6 +80,8 @@ class Decoder(nn.Module):
     def forward(self, input):
         input = input.transpose(1, 2).repeat(1, 1, self.m)  # [bs, 512, m]
         grid = self.build_grid(input.shape[0]).transpose(1, 2)  # [bs, 2, m]
+        if torch.cuda.is_available():
+            grid = grid.cuda()
         concate1 = torch.cat((input, grid), dim=1)  # [bs, 514, m]
         after_folding1 = self.mlp1(concate1)  # [bs, 3, m]
         concate2 = torch.cat((input, after_folding1), dim=1)  # [bs, 515, m]
