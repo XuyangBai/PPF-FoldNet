@@ -30,7 +30,7 @@ class ShapeNetDataset(data.Dataset):
                 self.cat2id[ls[0]] = ls[1]
 
         # parse segment num file.
-        with open(os.path.join(self.root, '../misc/num_seg_classes.txt'), 'r') as f:
+        with open('misc/num_seg_classes.txt', 'r') as f:
             for line in f:
                 ls = line.strip().split()
                 self.seg_classes[ls[0]] = int(ls[1])
