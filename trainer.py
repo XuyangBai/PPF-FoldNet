@@ -54,9 +54,9 @@ class Trainer(object):
 
         self.model.train()
         for epoch in range(self.epoch):
-            # self.train_epoch(epoch, self.verbose)
+            self.train_epoch(epoch, self.verbose)
 
-            if (epoch) % 5 == 0:
+            if (epoch + 1) % 5 == 0:
                 self.evaluate()
 
             if (epoch + 1) % 10 == 0:
@@ -116,7 +116,7 @@ class Trainer(object):
     def _snapshot(self, epoch):
         save_dir = os.path.join(self.save_dir, self.dataset)
         torch.save(self.model.state_dict(), save_dir + str(epoch) + '.pkl')
-        print(f"Load model to {save_dir + str(epoch)}.pkl")
+        print(f"Save model to {save_dir + str(epoch)}.pkl")
 
     def _load_pretrain(self, epoch):
         save_dir = os.path.join(self.save_dir, self.dataset)
