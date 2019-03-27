@@ -54,9 +54,9 @@ class Trainer(object):
 
         self.model.train()
         for epoch in range(self.epoch):
-            self.train_epoch(epoch, self.verbose)
+            # self.train_epoch(epoch, self.verbose)
 
-            if (epoch + 1) % 5 == 0:
+            if (epoch) % 5 == 0:
                 self.evaluate()
 
             if (epoch + 1) % 10 == 0:
@@ -94,12 +94,12 @@ class Trainer(object):
         epoch_time = time.time() - epoch_start_time
         self.train_hist['per_epoch_time'].append(epoch_time)
         self.train_hist['loss'].append(np.mean(loss_buf))
-        print(f'Epoch {epoch}: Loss {np.mean(loss_buf)}, time {epoch_time:.4f}')
+        print(f'Epoch {epoch+1}: Loss {np.mean(loss_buf)}, time {epoch_time:.4f}s')
 
     def evaluate(self):
         self.model.eval()
         loss_buf = []
-        for iter, (pts,) in enumerate(self.test_loader):
+        for iter, (pts, _) in enumerate(self.test_loader):
             if self.gpu_mode:
                 pts = pts.cuda()
             output = self.model(pts)
