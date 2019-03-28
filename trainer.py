@@ -58,7 +58,7 @@ class Trainer(object):
             self.train_epoch(epoch, self.verbose)
 
             if (epoch + 1) % 10 == 0 or epoch == 0:
-                res = self.evaluate(epoch)
+                res = self.evaluate(epoch + 1)
                 if res['loss'] < best_loss:
                     best_loss = res['loss']
                     self._snapshot('best')
@@ -119,20 +119,20 @@ class Trainer(object):
         if self.gpu_mode:
             pts = pts.cuda()
         reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
-        ax1, _ = draw_pts(pts.detach().numpy(), clr=None, cmap='CMRmap')
-        ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
+        ax1, _ = draw_pts(pts.cpu().detach().numpy(), clr=None, cmap='CMRmap')
+        ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'train_' + str(epoch) + ".png")
-        if epoch == 10:
+        if epoch == 0:
             ax1.figrue.savefig(self.result_dir + 'train_input.png')
         # show the reconstructed image from test set
         pts, _ = self.test_loader.dataset[0]
         if self.gpu_mode:
             pts = pts.cuda()
         reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
-        ax1, _ = draw_pts(pts.detach().numpy(), clr=None, cmap='CMRmap')
-        ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
+        ax1, _ = draw_pts(pts.cpu().detach().numpy(), clr=None, cmap='CMRmap')
+        ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'test_' + str(epoch) + ".png")
-        if epoch == 10:
+        if epoch == 0:
             ax1.figrue.savefig(self.result_dir + 'test_input.png')
 
         self.model.train()
