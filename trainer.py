@@ -57,7 +57,7 @@ class Trainer(object):
         for epoch in range(self.epoch):
             self.train_epoch(epoch, self.verbose)
 
-            if (epoch + 1) % 10 == 0:
+            if (epoch + 1) % 10 == 0 or epoch == 0:
                 res = self.evaluate(epoch)
                 if res['loss'] < best_loss:
                     best_loss = res['loss']
