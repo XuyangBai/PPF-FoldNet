@@ -119,7 +119,7 @@ class Trainer(object):
         if self.gpu_mode:
             pts = pts.cuda()
         reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
-        ax1, _ = draw_pts(pts, clr=None, cmap='CMRmap')
+        ax1, _ = draw_pts(pts.detach.numpy(), clr=None, cmap='CMRmap')
         ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'train_' + str(epoch) + ".png")
         if epoch == 10:
@@ -129,7 +129,7 @@ class Trainer(object):
         if self.gpu_mode:
             pts = pts.cuda()
         reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
-        ax1, _ = draw_pts(pts, clr=None, cmap='CMRmap')
+        ax1, _ = draw_pts(pts.detach.numpy(), clr=None, cmap='CMRmap')
         ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'test_' + str(epoch) + ".png")
         if epoch == 10:
