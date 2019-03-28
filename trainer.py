@@ -4,6 +4,7 @@ import time, os
 import numpy as np
 from model import FoldNet
 from dataloader import get_dataloader
+from visualize import draw_pts
 
 
 class Trainer(object):
@@ -56,10 +57,10 @@ class Trainer(object):
         for epoch in range(self.epoch):
             self.train_epoch(epoch, self.verbose)
 
-            if (epoch + 1) % 5 == 0:
-                res = self.evaluate()
+            if (epoch + 1) % 10 == 0:
+                res = self.evaluate(epoch)
                 if res['loss'] < best_loss:
-                    best = res['loss']
+                    best_loss = res['loss']
                     self._snapshot('best')
 
             if (epoch + 1) % 10 == 0:
@@ -99,20 +100,36 @@ class Trainer(object):
         self.train_hist['loss'].append(np.mean(loss_buf))
         print(f'Epoch {epoch+1}: Loss {np.mean(loss_buf)}, time {epoch_time:.4f}s')
 
-    def evaluate(self):
+    def evaluate(self, epoch):
         self.model.eval()
         loss_buf = []
-        for iter, (pts, _) in enumerate(self.test_loader):
+        for iter, (pts, _) in enumerate(self.train_loader):
             if self.gpu_mode:
                 pts = pts.cuda()
             output = self.model(pts)
             loss = self.model.get_loss(pts, output)
             loss_buf.append(loss.detach().cpu().numpy())
 
+        # show the reconstructed image from train set
+        pts, _ = self.train_loader.dataset[0]
+        reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
+        ax1, _ = draw_pts(pts, clr=None, cmap='CMRmap')
+        ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
+        ax2.figure.savefig(self.result_dir + 'train_' + str(epoch) + ".png")
+        if epoch == 10:
+            ax1.figrue.savefig(self.result_dir + 'train_input.png')
+        # show the reconstructed image from test set
+        pts, _ = self.test_loader.dataset[0]
+        reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
+        ax1, _ = draw_pts(pts, clr=None, cmap='CMRmap')
+        ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
+        ax2.figure.savefig(self.result_dir + 'test_' + str(epoch) + ".png")
+        if epoch == 10:
+            ax1.figrue.savefig(self.result_dir + 'test_input.png')
+
         self.model.train()
         res = {
             'loss': np.mean(loss_buf),
-            'accuracy': 0
         }
         return res
 

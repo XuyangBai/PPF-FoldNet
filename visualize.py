@@ -61,6 +61,5 @@ if __name__ == '__main__':
                               classification=True,
                               num_points=2048,
                               )
-
     ax, sct = draw_pts(dataset[random.randint(0, 100)][0], clr=None, cmap='CMRmap')
     ax.figure.show()
