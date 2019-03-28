@@ -135,10 +135,10 @@ class Trainer(object):
 
     def _snapshot(self, epoch):
         save_dir = os.path.join(self.save_dir, self.dataset)
-        torch.save(self.model.state_dict(), save_dir + str(epoch) + '.pkl')
-        print(f"Save model to {save_dir + str(epoch)}.pkl")
+        torch.save(self.model.state_dict(), save_dir + "_" + str(epoch) + '.pkl')
+        print(f"Save model to {save_dir}_{str(epoch)}.pkl")
 
     def _load_pretrain(self, epoch):
         save_dir = os.path.join(self.save_dir, self.dataset)
-        self.model.load(self.model.state_dict(), save_dir + str(epoch) + '.pkl')
-        print(f"Load model from {save_dir + str(epoch)}.pkl")
+        self.model.load(self.model.state_dict(), save_dir + "_" + str(epoch) + '.pkl')
+        print(f"Load model from {save_dir}_{str(epoch)}.pkl")
