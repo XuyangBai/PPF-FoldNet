@@ -94,6 +94,8 @@ class Trainer(object):
             if (iter + 1) % 10 == 0 and self.verbose:
                 print(
                     f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {time.time() - epoch_start_time:.2f}s")
+            if iter == 10:
+                break
         # finish one epoch
         epoch_time = time.time() - epoch_start_time
         self.train_hist['per_epoch_time'].append(epoch_time)
@@ -109,9 +111,13 @@ class Trainer(object):
             output = self.model(pts)
             loss = self.model.get_loss(pts, output)
             loss_buf.append(loss.detach().cpu().numpy())
+            if iter == 10:
+                break
 
         # show the reconstructed image from train set
         pts, _ = self.train_loader.dataset[0]
+        if self.gpu_mode:
+            pts = pts.cuda()
         reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
         ax1, _ = draw_pts(pts, clr=None, cmap='CMRmap')
         ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
@@ -120,6 +126,8 @@ class Trainer(object):
             ax1.figrue.savefig(self.result_dir + 'train_input.png')
         # show the reconstructed image from test set
         pts, _ = self.test_loader.dataset[0]
+        if self.gpu_mode:
+            pts = pts.cuda()
         reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
         ax1, _ = draw_pts(pts, clr=None, cmap='CMRmap')
         ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
