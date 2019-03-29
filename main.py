@@ -14,7 +14,7 @@ def parse_args():
 
     parser.add_argument('--epoch', type=int, default=20, help='The number of epochs to run')
     parser.add_argument('--num_points', type=int, default=2048, help='The size of point cloud')
-    parser.add_argument('--batch_size', type=int, default=32, help='The size of batch')
+    parser.add_argument('--batch_size', type=int, default=1, help='The size of batch')
     parser.add_argument('--dataset', type=str, default='shapenet', choices=['shapenet', 'modelnet'])
     parser.add_argument('--data_dir', type=str, default='data/', help='Directory name to find the dataset')
     parser.add_argument('--save_dir', type=str, default='models/', help='Directory name to save the model')
@@ -23,6 +23,9 @@ def parse_args():
     parser.add_argument('--gpu_mode', type=bool, default=False, help='whether use GPU')
     parser.add_argument('--verbose', type=bool, default=False)
     parser.add_argument('--learning_rate', type=float, default=0.001)
+    parser.add_argument('--beta1', type=float, default=0.9)
+    parser.add_argument('--beta2', type=float, default=0.999)
+    parser.add_argument('--weight_decay', type=float, default=1e-6)
 
     return check_args(parser.parse_args())
 

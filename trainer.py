@@ -24,8 +24,9 @@ class Trainer(object):
 
         self.model = FoldNet(args.num_points)
         self.parameter = self.model.get_parameter()
-        self.optimizer = optim.Adam(self.parameter, lr=args.learning_rate)
-        self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.5)
+        self.optimizer = optim.Adam(self.parameter, lr=args.learning_rate, betas=(args.beta1, args.beta2),
+                                    weight_decay=args.weight_decay)
+        # self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.5)
 
         self.train_loader = get_dataloader(root=self.data_dir,
                                            split='train',
@@ -63,8 +64,8 @@ class Trainer(object):
                     best_loss = res['loss']
                     self._snapshot('best')
 
-            if (epoch + 1) % 10 == 0:
-                self.scheduler.step()
+            # if (epoch + 1) % 100 == 0:
+            #     self.scheduler.step()
 
             if (epoch + 1) % 10 == 0:
                 self._snapshot(epoch + 1)
@@ -118,7 +119,7 @@ class Trainer(object):
         ax1, _ = draw_pts(pts.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'train_' + str(epoch) + ".png")
-        if epoch == 0:
+        if epoch == 10:
             ax1.figrue.savefig(self.result_dir + 'train_input.png')
         # show the reconstructed image from test set
         pts, _ = self.test_loader.dataset[0]
@@ -128,7 +129,7 @@ class Trainer(object):
         ax1, _ = draw_pts(pts.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'test_' + str(epoch) + ".png")
-        if epoch == 0:
+        if epoch == 10:
             ax1.figrue.savefig(self.result_dir + 'test_input.png')
 
         self.model.train()
