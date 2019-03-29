@@ -120,7 +120,7 @@ class Trainer(object):
         ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'train_' + str(epoch) + ".png")
         if epoch == 10:
-            ax1.figrue.savefig(self.result_dir + 'train_input.png')
+            ax1.figure.savefig(self.result_dir + 'train_input.png')
         # show the reconstructed image from test set
         pts, _ = self.test_loader.dataset[0]
         if self.gpu_mode:
@@ -130,7 +130,7 @@ class Trainer(object):
         ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'test_' + str(epoch) + ".png")
         if epoch == 10:
-            ax1.figrue.savefig(self.result_dir + 'test_input.png')
+            ax1.figure.savefig(self.result_dir + 'test_input.png')
 
         self.model.train()
         res = {
