@@ -3,7 +3,7 @@ from dataset import ShapeNetDataset
 
 
 def get_dataloader(root, split='train', class_choice=None, classification=True, batch_size=32, num_points=2048,
-                   num_workers=4):
+                   num_workers=4, shuffle=True):
     dataset = ShapeNetDataset(
         root=root,
         split=split,
@@ -15,7 +15,7 @@ def get_dataloader(root, split='train', class_choice=None, classification=True, 
     dataloader = torch.utils.data.DataLoader(
         dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=shuffle,
         num_workers=num_workers
     )
 

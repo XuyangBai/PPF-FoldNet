@@ -32,12 +32,16 @@ class Trainer(object):
                                            split='train',
                                            classification=True,
                                            batch_size=self.batch_size,
-                                           num_points=self.num_points)
+                                           num_points=self.num_points,
+                                           shuffle=False
+                                           )
         self.test_loader = get_dataloader(root=self.data_dir,
                                           split='test',
                                           classification=True,  # if True then return pts & cls
                                           batch_size=self.batch_size,
-                                          num_points=self.num_points)
+                                          num_points=self.num_points,
+                                          shuffle=False
+                                          )
         print("Training set size:", self.train_loader.dataset.__len__())
         print("Test set size:", self.test_loader.dataset.__len__())
 
@@ -120,7 +124,7 @@ class Trainer(object):
         ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'train_' + str(epoch) + ".png")
         if epoch == 10:
-            ax1.figure.savefig(self.result_dir + 'train_input.png')
+            ax1.figure.savefig(self.result_dir + 'train_0.png')
         # show the reconstructed image from test set
         pts, _ = self.test_loader.dataset[0]
         if self.gpu_mode:
@@ -130,7 +134,7 @@ class Trainer(object):
         ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
         ax2.figure.savefig(self.result_dir + 'test_' + str(epoch) + ".png")
         if epoch == 10:
-            ax1.figure.savefig(self.result_dir + 'test_input.png')
+            ax1.figure.savefig(self.result_dir + 'test_0.png')
 
         self.model.train()
         res = {

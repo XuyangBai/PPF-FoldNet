@@ -67,5 +67,5 @@ if __name__ == '__main__':
     pretrain = 'models/shapenet_best.pth'
     model = FoldNet(num_points=2048)
     model.load_state_dict(model.state_dict(), pretrain)
-    show_reconstructed(model, 'Airplane')
+    show_reconstructed(model, 'Chair')
     # interpolate(model, "Airplane", "Table")
