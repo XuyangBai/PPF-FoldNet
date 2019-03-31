@@ -72,5 +72,6 @@ if __name__ == '__main__':
     model = FoldNet(num_points=2048)
     state_dict = torch.load(pretrain, map_location='cpu')
     model.load_state_dict(model.state_dict(), state_dict)
+    model.eval()
     show_reconstructed(model, 'Chair')
     # interpolate(model, "Airplane", "Table")

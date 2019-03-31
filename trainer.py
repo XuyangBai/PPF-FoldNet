@@ -5,6 +5,7 @@ import numpy as np
 from model import FoldNet
 from dataloader import get_dataloader
 from visualize import draw_pts
+from tensorboardX import SummaryWriter
 
 
 class Trainer(object):
@@ -23,10 +24,14 @@ class Trainer(object):
         self.verbose = args.verbose
 
         self.model = FoldNet(args.num_points)
+        print(self.model)
         self.parameter = self.model.get_parameter()
         self.optimizer = optim.Adam(self.parameter, lr=args.learning_rate, betas=(args.beta1, args.beta2),
                                     weight_decay=args.weight_decay)
-        # self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.5)
+        self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.5)
+
+        experiment_id = "FoldNet" + time.strftime('%m%d%H%m')
+        self.writer = SummaryWriter(log_dir=f'{self.log_dir}/tboard_{experiment_id}')
 
         self.train_loader = get_dataloader(root=self.data_dir,
                                            split='train',
@@ -48,7 +53,7 @@ class Trainer(object):
         if self.gpu_mode:
             self.model = self.model.cuda()
 
-        self._load_pretrain('models_noshuffle_noaugment/model_best.pkl')
+        # self._load_pretrain('models_noshuffle_noaugment/model_best.pkl')
 
     def train(self):
         self.train_hist = {
@@ -62,7 +67,7 @@ class Trainer(object):
 
         self.model.train()
         for epoch in range(self.epoch):
-            # self.train_epoch(epoch, self.verbose)
+            self.train_epoch(epoch, self.verbose)
 
             if (epoch + 1) % 10 == 0 or epoch == 0:
                 res = self.evaluate(epoch + 1)
@@ -70,11 +75,15 @@ class Trainer(object):
                     best_loss = res['loss']
                     self._snapshot('best')
 
-            # if (epoch + 1) % 100 == 0:
-            #     self.scheduler.step()
+            if (epoch + 1) % 100 == 0:
+                self.scheduler.step()
 
             if (epoch + 1) % 10 == 0:
                 self._snapshot(epoch + 1)
+
+            if self.writer:
+                self.writer.add_scalar('Learning Rate', self._get_lr(), epoch)
+                self.writer.add_scalar('Loss', res['loss'], epoch)
 
         # finish all epoch
         self.train_hist['total_time'].append(time.time() - start_time)
@@ -99,8 +108,7 @@ class Trainer(object):
             loss_buf.append(loss.detach().cpu().numpy())
 
             if (iter + 1) % 10 == 0 and self.verbose:
-                print(
-                    f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {time.time() - epoch_start_time:.2f}s")
+                print(f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {time.time() - epoch_start_time:.2f}s")
         # finish one epoch
         epoch_time = time.time() - epoch_start_time
         self.train_hist['per_epoch_time'].append(epoch_time)
@@ -110,12 +118,12 @@ class Trainer(object):
     def evaluate(self, epoch):
         self.model.eval()
         loss_buf = []
-        # for iter, (pts, _) in enumerate(self.train_loader):
-        #     if self.gpu_mode:
-        #         pts = pts.cuda()
-        #     output = self.model(pts)
-        #     loss = self.model.get_loss(pts, output)
-        #     loss_buf.append(loss.detach().cpu().numpy())
+        for iter, (pts, _) in enumerate(self.train_loader):
+            if self.gpu_mode:
+                pts = pts.cuda()
+            output = self.model(pts)
+            loss = self.model.get_loss(pts, output)
+            loss_buf.append(loss.detach().cpu().numpy())
 
         # show the reconstructed image from train set
         pts, _ = self.train_loader.dataset[0]
@@ -153,3 +161,6 @@ class Trainer(object):
         state_dict = torch.load(pretrain, map_location='cpu')
         self.model.load_state_dict(self.model.state_dict(), state_dict)
         print(f"Load model from {pretrain}.pkl")
+
+    def _get_lr(self, group=0):
+        return self.optimizer.param_groups[group]['lr']
