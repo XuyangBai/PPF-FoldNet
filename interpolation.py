@@ -1,18 +1,22 @@
 from dataset import ShapeNetDataset
+from dataloader import get_dataloader
 from matplotlib import pyplot as plt
 from visualize import draw_pts
 from model import FoldNet
+import torch
 
 
 def show_reconstructed(model, class_choice='Airplane'):
     dataroot = "data/shapenetcore_partanno_segmentation_benchmark_v0"
-    dataset = ShapeNetDataset(root=dataroot,
-                              class_choice=class_choice,
-                              split='train',
-                              classification=True,
-                              num_points=2048,
-                              )
-    pts, _ = dataset[0]
+
+    dataloader = get_dataloader(root=dataroot,
+                                split='test',
+                                class_choice=class_choice,
+                                classification=True,
+                                num_points=2048,
+                                shuffle=False
+                                )
+    pts, _ = dataloader.dataset[0]
     reconstructed_pl = model(pts.view(1, 2048, 3))[0]
     ax1, _ = draw_pts(pts, clr=None, cmap='CMRmap')
     ax2, _ = draw_pts(reconstructed_pl.detach().numpy(), clr=None, cmap='CMRmap')
@@ -64,8 +68,9 @@ def interpolate(model, class1='Airplane', class2=None):
 
 
 if __name__ == '__main__':
-    pretrain = 'models/shapenet_best.pth'
+    pretrain = 'models/model_290.pkl'
     model = FoldNet(num_points=2048)
-    model.load_state_dict(model.state_dict(), pretrain)
+    state_dict = torch.load(pretrain, map_location='cpu')
+    model.load_state_dict(model.state_dict(), state_dict)
     show_reconstructed(model, 'Chair')
     # interpolate(model, "Airplane", "Table")

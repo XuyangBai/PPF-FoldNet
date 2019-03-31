@@ -48,6 +48,8 @@ class Trainer(object):
         if self.gpu_mode:
             self.model = self.model.cuda()
 
+        self._load_pretrain('models_noshuffle_noaugment/model_best.pkl')
+
     def train(self):
         self.train_hist = {
             'loss': [],
@@ -60,7 +62,7 @@ class Trainer(object):
 
         self.model.train()
         for epoch in range(self.epoch):
-            self.train_epoch(epoch, self.verbose)
+            # self.train_epoch(epoch, self.verbose)
 
             if (epoch + 1) % 10 == 0 or epoch == 0:
                 res = self.evaluate(epoch + 1)
@@ -108,12 +110,12 @@ class Trainer(object):
     def evaluate(self, epoch):
         self.model.eval()
         loss_buf = []
-        for iter, (pts, _) in enumerate(self.train_loader):
-            if self.gpu_mode:
-                pts = pts.cuda()
-            output = self.model(pts)
-            loss = self.model.get_loss(pts, output)
-            loss_buf.append(loss.detach().cpu().numpy())
+        # for iter, (pts, _) in enumerate(self.train_loader):
+        #     if self.gpu_mode:
+        #         pts = pts.cuda()
+        #     output = self.model(pts)
+        #     loss = self.model.get_loss(pts, output)
+        #     loss_buf.append(loss.detach().cpu().numpy())
 
         # show the reconstructed image from train set
         pts, _ = self.train_loader.dataset[0]
@@ -147,7 +149,7 @@ class Trainer(object):
         torch.save(self.model.state_dict(), save_dir + "_" + str(epoch) + '.pkl')
         print(f"Save model to {save_dir}_{str(epoch)}.pkl")
 
-    def _load_pretrain(self, epoch):
-        save_dir = os.path.join(self.save_dir, self.dataset)
-        self.model.load(self.model.state_dict(), save_dir + "_" + str(epoch) + '.pkl')
-        print(f"Load model from {save_dir}_{str(epoch)}.pkl")
+    def _load_pretrain(self, pretrain):
+        state_dict = torch.load(pretrain, map_location='cpu')
+        self.model.load_state_dict(self.model.state_dict(), state_dict)
+        print(f"Load model from {pretrain}.pkl")
