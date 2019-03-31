@@ -75,7 +75,7 @@ class Trainer(object):
                     best_loss = res['loss']
                     self._snapshot('best')
 
-            if (epoch + 1) % 100 == 0:
+            if epoch % 100 == 0:
                 self.scheduler.step()
 
             if (epoch + 1) % 10 == 0:
