@@ -125,16 +125,6 @@ class Trainer(object):
             loss = self.model.get_loss(pts, output)
             loss_buf.append(loss.detach().cpu().numpy())
 
-        # show the reconstructed image from train set
-        pts, _ = self.train_loader.dataset[0]
-        if self.gpu_mode:
-            pts = pts.cuda()
-        reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
-        ax1, _ = draw_pts(pts.cpu().detach().numpy(), clr=None, cmap='CMRmap')
-        ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
-        ax2.figure.savefig(self.result_dir + 'train_' + str(epoch) + ".png")
-        if epoch == 10:
-            ax1.figure.savefig(self.result_dir + 'train_0.png')
         # show the reconstructed image from test set
         pts, _ = self.test_loader.dataset[0]
         if self.gpu_mode:

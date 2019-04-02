@@ -18,6 +18,7 @@ class ShapeNetDataset(data.Dataset):
                  data_augmentation=True):
         self.num_points = num_points
         self.root = root
+        self.split = split
         self.cat2id = {}
         self.data_augmentation = data_augmentation
         self.classification = classification
@@ -70,7 +71,7 @@ class ShapeNetDataset(data.Dataset):
         dist = np.max(np.sqrt(np.sum(point_set ** 2, axis=1)), 0)
         point_set = point_set / dist  # scale
 
-        if self.data_augmentation:
+        if self.data_augmentation and self.split == 'train':
             theta = np.random.uniform(0, np.pi * 2)
             rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
             # TODO: why only rotate the x and z axis??
