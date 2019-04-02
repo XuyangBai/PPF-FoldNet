@@ -68,10 +68,10 @@ def interpolate(model, class1='Airplane', class2=None):
 
 
 if __name__ == '__main__':
-    pretrain = 'models/model_290.pkl'
+    pretrain = 'models/shapenet_best.pkl'
     model = FoldNet(num_points=2048)
     state_dict = torch.load(pretrain, map_location='cpu')
-    model.load_state_dict(model.state_dict(), state_dict)
+    model.load_state_dict(state_dict)
     model.eval()
     show_reconstructed(model, 'Chair')
     # interpolate(model, "Airplane", "Table")

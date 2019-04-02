@@ -149,7 +149,7 @@ class Trainer(object):
 
     def _load_pretrain(self, pretrain):
         state_dict = torch.load(pretrain, map_location='cpu')
-        self.model.load_state_dict(self.model.state_dict(), state_dict)
+        self.model.load_state_dict(state_dict)
         print(f"Load model from {pretrain}.pkl")
 
     def _get_lr(self, group=0):
