@@ -2,7 +2,7 @@ import torch
 import torch.optim as optim
 import time, os
 import numpy as np
-from model import FoldNet
+
 from dataloader import get_dataloader
 from visualize import draw_pts
 from tensorboardX import SummaryWriter
@@ -22,36 +22,21 @@ class Trainer(object):
         self.gpu_mode = args.gpu_mode
         self.verbose = args.verbose
 
-        self.model = FoldNet(args.num_points)
-        print(self.model)
-        self.parameter = self.model.get_parameter()
-        self.optimizer = optim.Adam(self.parameter, lr=args.learning_rate, betas=(args.beta1, args.beta2),
-                                    weight_decay=args.weight_decay)
-        self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.5)
+        self.model = args.model
+        self.optimizer = args.optimizer
+        self.scheduler = args.scheduler
+        self.scheduler_interval = args.scheduler_interval
 
         self.writer = SummaryWriter(log_dir=args.tboard_dir)
 
-        self.train_loader = get_dataloader(root=self.data_dir,
-                                           split='train',
-                                           classification=True,
-                                           batch_size=self.batch_size,
-                                           num_points=self.num_points,
-                                           shuffle=False
-                                           )
-        self.test_loader = get_dataloader(root=self.data_dir,
-                                          split='test',
-                                          classification=True,  # if True then return pts & cls
-                                          batch_size=self.batch_size,
-                                          num_points=self.num_points,
-                                          shuffle=False
-                                          )
-        print("Training set size:", self.train_loader.dataset.__len__())
-        print("Test set size:", self.test_loader.dataset.__len__())
+        self.train_loader = args.train_loader
+        self.test_loader = args.test_loader
 
         if self.gpu_mode:
             self.model = self.model.cuda()
 
-        # self._load_pretrain('models_noshuffle_noaugment/model_best.pkl')
+        if args.pretrain != '':
+            self._load_pretrain(args.pretrain)
 
     def train(self):
         self.train_hist = {
@@ -73,10 +58,10 @@ class Trainer(object):
                     best_loss = res['loss']
                     self._snapshot('best')
 
-            if epoch % 100 == 0:
+            if epoch % self.scheduler_interval == 0:
                 self.scheduler.step()
 
-            if (epoch + 1) % 10 == 0:
+            if (epoch + 1) % self.snapshot_interval == 0:
                 self._snapshot(epoch + 1)
 
             if self.writer:
@@ -106,7 +91,8 @@ class Trainer(object):
             loss_buf.append(loss.detach().cpu().numpy())
 
             if (iter + 1) % 10 == 0 and self.verbose:
-                print(f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {time.time() - epoch_start_time:.2f}s")
+                print(
+                    f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {time.time() - epoch_start_time:.2f}s")
         # finish one epoch
         epoch_time = time.time() - epoch_start_time
         self.train_hist['per_epoch_time'].append(epoch_time)
