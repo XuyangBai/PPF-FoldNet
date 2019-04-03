@@ -1,7 +1,5 @@
 data/
-logs/
-models/
-results/
+snapshot/
 *.pyc
 .DS_Store
 .idea/

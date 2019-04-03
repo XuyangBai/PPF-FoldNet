@@ -19,7 +19,6 @@ class Trainer(object):
             self.data_dir = os.path.join(args.data_dir, 'shapenetcore_partanno_segmentation_benchmark_v0')
         self.save_dir = args.save_dir
         self.result_dir = args.result_dir
-        self.log_dir = args.log_dir
         self.gpu_mode = args.gpu_mode
         self.verbose = args.verbose
 
@@ -30,8 +29,7 @@ class Trainer(object):
                                     weight_decay=args.weight_decay)
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.5)
 
-        experiment_id = "FoldNet" + time.strftime('%m%d%H%m')
-        self.writer = SummaryWriter(log_dir=f'{self.log_dir}/tboard_{experiment_id}')
+        self.writer = SummaryWriter(log_dir=args.tboard_dir)
 
         self.train_loader = get_dataloader(root=self.data_dir,
                                            split='train',
