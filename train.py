@@ -15,13 +15,13 @@ class Args(object):
         os.makedirs(snapshot_root, exist_ok=True)
         os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
-        self.epoch = 100
+        self.epoch = 300
         self.num_points = 2048
         self.batch_size = 16
         self.dataset = 'shapenet'
-        self.data_dir = 'data/shapenetcore_partanno_segmentation_benchmark_v0'
+        self.data_dir = '/data/shapenetcore_partanno_segmentation_benchmark_v0'
 
-        self.gpu_mode = False
+        self.gpu_mode = True
         self.verbose = False
 
         # model & optimizer

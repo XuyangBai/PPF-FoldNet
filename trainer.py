@@ -26,7 +26,7 @@ class Trainer(object):
         self.optimizer = args.optimizer
         self.scheduler = args.scheduler
         self.scheduler_interval = args.scheduler_interval
-
+        self.snapshot_interval = args.snapshot_interval
         self.writer = SummaryWriter(log_dir=args.tboard_dir)
 
         self.train_loader = args.train_loader
