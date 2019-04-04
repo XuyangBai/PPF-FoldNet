@@ -11,7 +11,9 @@ class Args(object):
     def __init__(self):
         self.experiment_id = "FoldNet" + time.strftime('%m%d%H%M')
         snapshot_root = 'snapshot/%s' % self.experiment_id
+        tensorboard_root = 'tensorboard/%s' % self.experiment_id
         os.makedirs(snapshot_root, exist_ok=True)
+        os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
         self.epoch = 100
         self.num_points = 2048
@@ -52,7 +54,7 @@ class Args(object):
         self.snapshot_interval = 10
         self.save_dir = os.path.join(snapshot_root, 'models/')
         self.result_dir = os.path.join(snapshot_root, 'results/')
-        self.tboard_dir = os.path.join(snapshot_root, 'tboard/')
+        self.tboard_dir = tensorboard_root
 
         self.check_args()
 
