@@ -23,6 +23,9 @@ class Encoder(nn.Module):
         # self.bn5 = nn.BatchNorm1d(512)
 
     def forward(self, input):
+        # origin shape from dataloader [bs, 32, 2048, 4]
+        # after reshape: [bs*32, 2048, 4]
+        input = input.reshape([-1, input.shape[2], input.shape[3]])
         input = input.transpose(2, 1)
         x = F.relu(self.bn1(self.conv1(input)))
         local_feature = x  # save the  low level features to concatenate this global feature.

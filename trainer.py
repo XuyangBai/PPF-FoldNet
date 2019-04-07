@@ -78,13 +78,13 @@ class Trainer(object):
         epoch_start_time = time.time()
         loss_buf = []
         num_batch = int(len(self.train_loader.dataset) / self.batch_size)
-        for iter, (pts, _) in enumerate(self.train_loader):
+        for iter, patches in enumerate(self.train_loader):
             if self.gpu_mode:
-                pts = pts.cuda()
+                patches = patches.cuda()
             # forward
             self.optimizer.zero_grad()
-            output = self.model(pts)
-            loss = self.model.get_loss(pts, output)
+            output = self.model(patches)
+            loss = self.model.get_loss(patches, output)
             # backward
             loss.backward()
             self.optimizer.step()

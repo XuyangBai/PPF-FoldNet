@@ -1,4 +1,3 @@
-from dataset import ShapeNetDataset
 import numpy as np
 import random
 from matplotlib import cm
@@ -51,15 +50,3 @@ def draw_pts(pts, clr, cmap, ax=None, sz=20):
     ax.set_axis_off()
     ax.set_facecolor("white")
     return ax, sct
-
-
-if __name__ == '__main__':
-    dataroot = "data/shapenetcore_partanno_segmentation_benchmark_v0"
-    dataset = ShapeNetDataset(root=dataroot,
-                              class_choice='Airplane',
-                              split='train',
-                              classification=True,
-                              num_points=2048,
-                              )
-    ax, sct = draw_pts(dataset[random.randint(0, 100)][0], clr=None, cmap='CMRmap')
-    ax.figure.show()

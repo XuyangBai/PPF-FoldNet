@@ -9,7 +9,7 @@ from dataloader import get_dataloader
 
 class Args(object):
     def __init__(self):
-        self.experiment_id = "FoldNet" + time.strftime('%m%d%H%M')
+        self.experiment_id = "PPF-FoldNet" + time.strftime('%m%d%H%M')
         snapshot_root = 'snapshot/%s' % self.experiment_id
         tensorboard_root = 'tensorboard/%s' % self.experiment_id
         os.makedirs(snapshot_root, exist_ok=True)
@@ -18,10 +18,11 @@ class Args(object):
         self.epoch = 300
         self.num_points = 2048
         self.batch_size = 16
-        self.dataset = 'shapenet'
-        self.data_dir = '/data/shapenetcore_partanno_segmentation_benchmark_v0'
+        self.dataset = 'sun3d'
+        self.data_train_dir = './data/sun3d-harvard_c11-hv_c11_2/seq-01-train-npy'
+        self.data_test_dir = './data/sun3d-harvard_c11-hv_c11_2/seq-01-test-npy'
 
-        self.gpu_mode = True
+        self.gpu_mode = False
         self.verbose = False
 
         # model & optimizer
@@ -33,18 +34,12 @@ class Args(object):
         self.scheduler_interval = 100
 
         # dataloader
-        self.train_loader = get_dataloader(root=self.data_dir,
+        self.train_loader = get_dataloader(root=self.data_train_dir,
                                            split='train',
-                                           classification=True,
-                                           batch_size=self.batch_size,
-                                           num_points=self.num_points,
                                            shuffle=False
                                            )
-        self.test_loader = get_dataloader(root=self.data_dir,
+        self.test_loader = get_dataloader(root=self.data_test_dir,
                                           split='test',
-                                          classification=True,  # if True then return pts & cls
-                                          batch_size=self.batch_size,
-                                          num_points=self.num_points,
                                           shuffle=False
                                           )
         print("Training set size:", self.train_loader.dataset.__len__())

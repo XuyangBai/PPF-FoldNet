@@ -1,15 +1,11 @@
 import torch
-from dataset import ShapeNetDataset
+from dataset import SunDataset
 
 
-def get_dataloader(root, split='train', class_choice=None, classification=True, batch_size=32, num_points=2048,
-                   num_workers=4, shuffle=True):
-    dataset = ShapeNetDataset(
+def get_dataloader(root, split='train', batch_size=32, num_workers=4, shuffle=True):
+    dataset = SunDataset(
         root=root,
         split=split,
-        class_choice=class_choice,
-        num_points=num_points,
-        classification=classification,
     )
 
     dataloader = torch.utils.data.DataLoader(
@@ -23,11 +19,11 @@ def get_dataloader(root, split='train', class_choice=None, classification=True, 
 
 
 if __name__ == '__main__':
-    dataset = "shapenet"
-    dataroot = "data/shapenetcore_partanno_segmentation_benchmark_v0"
-    dataloader = get_dataloader(dataroot, batch_size=4, num_points=2048)
-    print("dataloader size:", dataloader.dataset.__len__())
-    for iter, (pts, seg) in enumerate(dataloader):
-        print("points:", pts.shape, pts.type)
-        print("segs  :", seg.shape, seg.type)
+    dataset = 'sun3d'
+    dataroot = "./data/sun3d-harvard_c11-hv_c11_2/seq-01-test-npy"
+    dataloader = get_dataloader(dataroot, batch_size=2)
+    for iter, (pts) in enumerate(dataloader):
+        print("points:", pts.shape)
+        pts = pts.reshape([-1, pts.shape[2], pts.shape[3]])
+        print("points after reshape:", pts.shape)
         break
