@@ -7,10 +7,10 @@ from loss import ChamferLoss
 
 
 class Encoder(nn.Module):
-    def __init__(self, num_points):
+    def __init__(self, num_points=1024):
         super(Encoder, self).__init__()
         self.num_points = num_points
-        self.conv1 = nn.Conv1d(3, 64, 1)
+        self.conv1 = nn.Conv1d(4, 64, 1)
         self.conv2 = nn.Conv1d(64, 128, 1)
         self.conv3 = nn.Conv1d(128, 1024, 1)
         self.bn1 = nn.BatchNorm1d(64)
@@ -23,17 +23,15 @@ class Encoder(nn.Module):
         # self.bn5 = nn.BatchNorm1d(512)
 
     def forward(self, input):
-        # origin shape from dataloader [bs, 32, 2048, 4]
-        # after reshape: [bs*32, 2048, 4]
-        input = input.reshape([-1, input.shape[2], input.shape[3]])
-        input = input.transpose(2, 1)
+        # origin shape from dataloader [bs*32, 1024(num_points), 4]
+        input = input.transpose(2, 1).float()
         x = F.relu(self.bn1(self.conv1(input)))
         local_feature = x  # save the  low level features to concatenate this global feature.
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
         x = torch.max(x, 2, keepdim=True)[0]
-        global_feature = x.view(-1, 1024, 1).repeat(1, 1, self.num_points)
-        feature = torch.cat([local_feature, global_feature], 1)  # [bs, 1088, 2048]
+        global_feature = x.view(-1, 1024, 1).repeat(1, 1, 1024)
+        feature = torch.cat([local_feature, global_feature], 1)  # [bs, 1088, 1024]
 
         # TODO: add batch_norm or not?
         x = F.relu(self.fc1(feature.transpose(1, 2)))
@@ -44,26 +42,26 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, num_points=2048, m=2025):
+    def __init__(self, num_points=1024, m=1024):
         super(Decoder, self).__init__()
         self.n = num_points  # input point cloud size.
-        self.m = m  # 45 * 45.
-        self.meshgrid = [[-0.3, 0.3, 45], [-0.3, 0.3, 45]]
+        self.m = m  # 32 * 32
+        self.meshgrid = [[-0.3, 0.3, 32], [-0.3, 0.3, 32]]
         self.mlp1 = nn.Sequential(
             nn.Conv1d(514, 256, 1),
             nn.ReLU(),
             nn.Conv1d(256, 64, 1),
             nn.ReLU(),
-            nn.Conv1d(64, 3, 1),
+            nn.Conv1d(64, 4, 1),
             # nn.ReLU(),
         )
 
         self.mlp2 = nn.Sequential(
-            nn.Conv1d(515, 256, 1),
+            nn.Conv1d(516, 256, 1),
             nn.ReLU(),
             nn.Conv1d(256, 64, 1),
             nn.ReLU(),
-            nn.Conv1d(64, 3, 1),
+            nn.Conv1d(64, 4, 1),
             # nn.ReLU(),
         )
 
@@ -86,18 +84,18 @@ class Decoder(nn.Module):
         if torch.cuda.is_available():
             grid = grid.cuda()
         concate1 = torch.cat((input, grid), dim=1)  # [bs, 514, m]
-        after_folding1 = self.mlp1(concate1)  # [bs, 3, m]
-        concate2 = torch.cat((input, after_folding1), dim=1)  # [bs, 515, m]
-        after_folding2 = self.mlp2(concate2)  # [bs, 3, m]
-        return after_folding2.transpose(1, 2)  # [bs, m ,3]
+        after_folding1 = self.mlp1(concate1)  # [bs, 4, m]
+        concate2 = torch.cat((input, after_folding1), dim=1)  # [bs, 516, m]
+        after_folding2 = self.mlp2(concate2)  # [bs, 4, m]
+        return after_folding2.transpose(1, 2)  # [bs, m ,4]
 
 
-class FoldNet(nn.Module):
+class PPFFoldNet(nn.Module):
     def __init__(self, num_points):
-        super(FoldNet, self).__init__()
+        super(PPFFoldNet, self).__init__()
 
         self.encoder = Encoder(num_points=num_points)
-        self.decoder = Decoder(num_points=num_points)
+        self.decoder = Decoder(num_points=num_points, m=num_points)
         self.loss = ChamferLoss()
 
     def forward(self, input):

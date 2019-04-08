@@ -2,9 +2,6 @@ import torch
 import torch.optim as optim
 import time, os
 import numpy as np
-
-from dataloader import get_dataloader
-from visualize import draw_pts
 from tensorboardX import SummaryWriter
 
 
@@ -79,6 +76,7 @@ class Trainer(object):
         loss_buf = []
         num_batch = int(len(self.train_loader.dataset) / self.batch_size)
         for iter, patches in enumerate(self.train_loader):
+            patches = patches.reshape([-1, patches.shape[2], patches.shape[3]])
             if self.gpu_mode:
                 patches = patches.cuda()
             # forward
@@ -102,23 +100,13 @@ class Trainer(object):
     def evaluate(self, epoch):
         self.model.eval()
         loss_buf = []
-        for iter, (pts, _) in enumerate(self.train_loader):
+        for iter, patches in enumerate(self.train_loader):
+            patches = patches.reshape([-1, patches.shape[2], patches.shape[3]])
             if self.gpu_mode:
-                pts = pts.cuda()
-            output = self.model(pts)
-            loss = self.model.get_loss(pts, output)
+                patches = patches.cuda()
+            output = self.model(patches)
+            loss = self.model.get_loss(patches, output)
             loss_buf.append(loss.detach().cpu().numpy())
-
-        # show the reconstructed image from test set
-        pts, _ = self.test_loader.dataset[0]
-        if self.gpu_mode:
-            pts = pts.cuda()
-        reconstructed_pl = self.model(pts.view(1, 2048, 3))[0]
-        ax1, _ = draw_pts(pts.cpu().detach().numpy(), clr=None, cmap='CMRmap')
-        ax2, _ = draw_pts(reconstructed_pl.cpu().detach().numpy(), clr=None, cmap='CMRmap')
-        ax2.figure.savefig(self.result_dir + 'test_' + str(epoch) + ".png")
-        if epoch == 10:
-            ax1.figure.savefig(self.result_dir + 'test_0.png')
 
         self.model.train()
         res = {

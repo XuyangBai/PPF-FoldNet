@@ -2,7 +2,7 @@ import torch
 from dataset import SunDataset
 
 
-def get_dataloader(root, split='train', batch_size=32, num_workers=4, shuffle=True):
+def get_dataloader(root, split='train', batch_size=2, num_workers=4, shuffle=True):
     dataset = SunDataset(
         root=root,
         split=split,

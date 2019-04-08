@@ -3,7 +3,7 @@ import time
 import shutil
 from torch import optim
 from trainer import Trainer
-from model import FoldNet
+from model import PPFFoldNet
 from dataloader import get_dataloader
 
 
@@ -16,8 +16,11 @@ class Args(object):
         os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
         self.epoch = 300
-        self.num_points = 2048
-        self.batch_size = 16
+        self.num_points = 1024 # num of points per patches
+        # TODO: I do not know whether this is correct.
+        #  I set default patches per point cloud fragment to 32
+        #  So the input to the network is [bs, 32, num_points, 4]
+        self.batch_size = 2
         self.dataset = 'sun3d'
         self.data_train_dir = './data/sun3d-harvard_c11-hv_c11_2/seq-01-train-npy'
         self.data_test_dir = './data/sun3d-harvard_c11-hv_c11_2/seq-01-test-npy'
@@ -26,7 +29,7 @@ class Args(object):
         self.verbose = False
 
         # model & optimizer
-        self.model = FoldNet(self.num_points)
+        self.model = PPFFoldNet(self.num_points)
         self.pretrain = ''
         self.parameter = self.model.get_parameter()
         self.optimizer = optim.Adam(self.parameter, lr=0.001, betas=(0.9, 0.999), weight_decay=1e-6)
@@ -35,10 +38,12 @@ class Args(object):
 
         # dataloader
         self.train_loader = get_dataloader(root=self.data_train_dir,
+                                           batch_size=self.batch_size,
                                            split='train',
                                            shuffle=False
                                            )
         self.test_loader = get_dataloader(root=self.data_test_dir,
+                                          batch_size=self.batch_size,
                                           split='test',
                                           shuffle=False
                                           )

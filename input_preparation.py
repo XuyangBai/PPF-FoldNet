@@ -42,12 +42,13 @@ def collect_local_neighbor(ref_pts, pcd, vicinity=0.3, num_points=1024):
     kdtree = open3d.geometry.KDTreeFlann(pcd)
     dict = []
     for point in ref_pts.points:
+        # Bug fix: here the first returned result will be itself. So the calculated ppf will be nan.
         [k, idx, variant] = kdtree.search_radius_vector_3d(point, vicinity)
         # random select fix number [num_points] of points to form the local patch.
         if k > num_points:
-            idx = np.random.choice(idx, num_points, replace=False)
+            idx = np.random.choice(idx[1:], num_points, replace=False)
         else:
-            idx = np.random.choice(idx, num_points)
+            idx = np.random.choice(idx[1:], num_points)
         dict.append(idx)
     return dict
 

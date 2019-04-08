@@ -13,7 +13,7 @@ class SunDataset(data.Dataset):
     def __init__(self,
                  root,
                  split='train',
-                 num_patches=32,
+                 num_patches=32,  # num of patches per point cloud.
                  data_augmentation=True):
         self.root = root
         self.split = split
