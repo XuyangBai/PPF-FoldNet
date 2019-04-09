@@ -2,10 +2,11 @@ import torch
 from dataset import SunDataset
 
 
-def get_dataloader(root, split, batch_size=2, num_workers=4, shuffle=True):
+def get_dataloader(root, split, batch_size=2, num_patches=32, num_workers=4, shuffle=True):
     dataset = SunDataset(
         root=root,
         split=split,
+        num_patches=num_patches
     )
 
     dataloader = torch.utils.data.DataLoader(

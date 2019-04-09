@@ -9,7 +9,7 @@ class Trainer(object):
     def __init__(self, args):
         # parameters
         self.epoch = args.epoch
-        self.num_points = args.num_points
+        self.num_points_per_patch = args.num_points_per_patch
         self.batch_size = args.batch_size
         self.dataset = args.dataset
         if self.dataset == 'shapenet':
@@ -47,10 +47,11 @@ class Trainer(object):
 
         self.model.train()
         for epoch in range(self.epoch):
-            self.train_epoch(epoch, self.verbose)
+            self.train_epoch(epoch)
 
             if (epoch + 1) % 10 == 0 or epoch == 0:
                 res = self.evaluate(epoch + 1)
+                print(f'Evaluation: Epoch {epoch+1}: Loss {res["loss"]}')
                 if res['loss'] < best_loss:
                     best_loss = res['loss']
                     self._snapshot('best')
@@ -88,7 +89,7 @@ class Trainer(object):
             self.optimizer.step()
             loss_buf.append(loss.detach().cpu().numpy())
 
-            if (iter + 1) % 10 == 0 and self.verbose:
+            if (iter + 1) % 100 == 0 and self.verbose:
                 iter_time = time.time() - epoch_start_time
                 print(f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {iter_time:.2f}s")
         # finish one epoch
@@ -107,7 +108,6 @@ class Trainer(object):
             output = self.model(patches)
             loss = self.model.get_loss(patches, output)
             loss_buf.append(loss.detach().cpu().numpy())
-
         self.model.train()
         res = {
             'loss': np.mean(loss_buf),

@@ -13,19 +13,20 @@ class SunDataset(data.Dataset):
     def __init__(self,
                  root,
                  split='train',
-                 # num_patches=32,  # num of patches per point cloud.
+                 num_patches=32,  # num of patches per point cloud.
                  data_augmentation=True):
         self.root = root
         self.split = split
         self.data_augmentation = data_augmentation
-        # self.num_patches = num_patches
+        self.num_patches = num_patches
 
         self.ids_list = [filename.split(".")[0] for filename in os.listdir(self.root)]
         self.ids_list = list(set(self.ids_list))
 
     def __getitem__(self, index):
+        ind = np.random.choice(range(2048), self.num_patches, replace=False)
         patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
-        return patches, self.ids_list[index]
+        return patches[ind], self.ids_list[index]
         # if self.split == 'train':
         #     patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
         #     return patches
