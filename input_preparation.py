@@ -53,13 +53,16 @@ def collect_local_neighbor(ref_pts, pcd, vicinity=0.3, num_points=1024):
     return dict
 
 
-def build_local_patch(ref_pcd, pcd, patches):
-    local_patch = np.zeros([len(ref_pcd.points), len(patches[0]), 4],
-                           dtype=float)  # num_ref_point, num_point_per_patch, 4
-    for j, ref_point, ref_point_normal, inds in zip(range(len(ref_pcd.points)), ref_pcd.points, ref_pcd.normals,
-                                                    patches):  # for each reference point
-        ppfs = np.zeros([len(inds), 4])
-        for i, ind in zip(range(len(inds)), inds):  # for each point in this local patch
+def build_local_patch(ref_pcd, pcd, neighbor):
+    num_ref_point = len(ref_pcd.points)
+    num_point_per_patch = len(neighbor[0])
+    # shape: num_ref_point, num_point_per_patch, 4
+    local_patch = np.zeros([num_ref_point, num_point_per_patch, 4], dtype=float)
+    # for each reference point
+    for j, ref_point, ref_point_normal, inds in zip(range(num_ref_point), ref_pcd.points, ref_pcd.normals, neighbor):
+        ppfs = np.zeros([num_point_per_patch, 4])
+        # for each point in this local patch
+        for i, ind in zip(range(num_point_per_patch), inds):
             ppf = _ppf(ref_point, ref_point_normal, pcd.points[ind], pcd.normals[ind])
             ppfs[i] = ppf
         local_patch[j] = ppfs
@@ -90,22 +93,23 @@ def input_preprocess(data_dir, id, save_dir):
     # assert ref_pts.shape[0] == 2048
 
     # collect local patch for each reference point
-    patches = collect_local_neighbor(ref_pcd, pcd)
+    neighbor = collect_local_neighbor(ref_pcd, pcd)
     # assert len(patches) == ref_pts.shape[0]
 
     # calculate the point pair feature for each patch
-    local_patch = build_local_patch(ref_pcd, pcd, patches)
+    local_patch = build_local_patch(ref_pcd, pcd, neighbor)
 
-    # save
+    # save the local_patch and reference point cloud for one point cloud fragment.
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     np.save(f'{save_dir}/frame-{id}.npy', local_patch)
+    open3d.write_point_cloud(f"{save_dir}/frame-{id}.pcd", ref_pcd)
 
 
 if __name__ == "__main__":
-    data_dir = "data/sun3d-harvard_c11-hv_c11_2/seq-01-train"
+    data_dir = "data/train/sun3d-harvard_c11-hv_c11_2/seq-01-test"
     for filename in os.listdir(data_dir):
         if filename.__contains__('color'):
             id = filename.split(".")[0].replace("frame-", "")
-            input_preprocess(data_dir, id, data_dir + '-npy')
+            input_preprocess(data_dir, id, data_dir + '-processed')
             print("Finish", id)

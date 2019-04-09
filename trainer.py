@@ -71,11 +71,11 @@ class Trainer(object):
                                                                         self.epoch, self.train_hist['total_time'][0]))
         print("Training finish!... save training results")
 
-    def train_epoch(self, epoch, verbose=False):
+    def train_epoch(self, epoch):
         epoch_start_time = time.time()
         loss_buf = []
         num_batch = int(len(self.train_loader.dataset) / self.batch_size)
-        for iter, patches in enumerate(self.train_loader):
+        for iter, (patches, ids) in enumerate(self.train_loader):
             patches = patches.reshape([-1, patches.shape[2], patches.shape[3]])
             if self.gpu_mode:
                 patches = patches.cuda()
@@ -89,8 +89,8 @@ class Trainer(object):
             loss_buf.append(loss.detach().cpu().numpy())
 
             if (iter + 1) % 10 == 0 and self.verbose:
-                print(
-                    f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {time.time() - epoch_start_time:.2f}s")
+                iter_time = time.time() - epoch_start_time
+                print(f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {iter_time:.2f}s")
         # finish one epoch
         epoch_time = time.time() - epoch_start_time
         self.train_hist['per_epoch_time'].append(epoch_time)
@@ -100,7 +100,7 @@ class Trainer(object):
     def evaluate(self, epoch):
         self.model.eval()
         loss_buf = []
-        for iter, patches in enumerate(self.train_loader):
+        for iter, (patches, ids) in enumerate(self.test_loader):
             patches = patches.reshape([-1, patches.shape[2], patches.shape[3]])
             if self.gpu_mode:
                 patches = patches.cuda()

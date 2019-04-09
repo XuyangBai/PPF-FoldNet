@@ -16,14 +16,14 @@ class Args(object):
         os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
         self.epoch = 300
-        self.num_points = 1024 # num of points per patches
+        self.num_points = 1024  # num of points per patches
         # TODO: I do not know whether this is correct.
-        #  I set default patches per point cloud fragment to 32
-        #  So the input to the network is [bs, 32, num_points, 4]
+        #  I pick all the local patches from one point cloud fragment
+        #  So the input to the network is [bs, 2048, 1024, 4]
         self.batch_size = 2
         self.dataset = 'sun3d'
-        self.data_train_dir = './data/sun3d-harvard_c11-hv_c11_2/seq-01-train-npy'
-        self.data_test_dir = './data/sun3d-harvard_c11-hv_c11_2/seq-01-test-npy'
+        self.data_train_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed'
+        self.data_test_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-test-processed'
 
         self.gpu_mode = False
         self.verbose = False
@@ -43,7 +43,7 @@ class Args(object):
                                            shuffle=False
                                            )
         self.test_loader = get_dataloader(root=self.data_test_dir,
-                                          batch_size=self.batch_size,
+                                          batch_size=2,  # batch size of test loader have to be 2
                                           split='test',
                                           shuffle=False
                                           )

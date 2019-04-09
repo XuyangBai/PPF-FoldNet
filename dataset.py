@@ -1,7 +1,7 @@
 import torch.utils.data as data
 import os
 import os.path
-import torch
+import open3d
 import numpy as np
 import sys
 from tqdm import tqdm
@@ -13,29 +13,40 @@ class SunDataset(data.Dataset):
     def __init__(self,
                  root,
                  split='train',
-                 num_patches=32,  # num of patches per point cloud.
+                 # num_patches=32,  # num of patches per point cloud.
                  data_augmentation=True):
         self.root = root
         self.split = split
         self.data_augmentation = data_augmentation
-        self.num_patches = num_patches
+        # self.num_patches = num_patches
 
-        self.ids_list = [filename for filename in os.listdir(self.root)]
+        self.ids_list = [filename.split(".")[0] for filename in os.listdir(self.root)]
+        self.ids_list = list(set(self.ids_list))
 
     def __getitem__(self, index):
-        patches = np.load(os.path.join(self.root, self.ids_list[index]))
-        return patches[np.random.choice(range(2048), self.num_patches, replace=False)]
+        patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
+        return patches, self.ids_list[index]
+        # if self.split == 'train':
+        #     patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
+        #     return patches
+        # else:
+        #     patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
+        #     pcd = open3d.read_point_cloud(os.path.join(self.root, self.ids_list[index] + ".pcd"))
+        #     return patches, [pcd]
 
     def __len__(self):
         return len(self.ids_list)
 
 
 if __name__ == '__main__':
-    dataset = "sun3d"
-    if dataset == 'sun3d':
-        datapath = "./data/sun3d-harvard_c11-hv_c11_2/seq-01-test-npy"
-        d = SunDataset(root=datapath, num_patches=32)
-        patches = d[0]
-        assert patches.shape == (32, 1024, 4)
-    else:
-        print("No such dataset")
+    datapath = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-test-processed"
+    d = SunDataset(root=datapath, split='train')
+    patches, id = d[0]
+    assert patches.shape == (2048, 1024, 4)
+    print(id)
+    print(d.ids_list)
+
+    # d = SunDataset(root=datapath, split='test')
+    # patches, pcd = d[0]
+    # assert patches.shape == (2048, 1024, 4)
+    # print(pcd)
