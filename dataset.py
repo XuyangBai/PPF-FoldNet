@@ -22,6 +22,10 @@ class SunDataset(data.Dataset):
 
         self.ids_list = [filename.split(".")[0] for filename in os.listdir(self.root)]
         self.ids_list = list(set(self.ids_list))
+        if split == 'train':
+            self.ids_list = self.ids_list[0: int(0.8 * len(self.ids_list))]
+        else:
+            self.ids_list = self.ids_list[int(0.8 * len(self.ids_list)):-1]
 
     def __getitem__(self, index):
         ind = np.random.choice(range(2048), self.num_patches, replace=False)

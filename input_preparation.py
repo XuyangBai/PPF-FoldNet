@@ -107,7 +107,8 @@ def input_preprocess(data_dir, id, save_dir):
 
 
 if __name__ == "__main__":
-    data_dir = "/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01"
+    data_dir = "/data/3DMatch/test/sun3d-hotel_umd-maryland_hotel3/seq-01"
+   # data_dir = "/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01"
     for filename in os.listdir(data_dir):
         if filename.__contains__('color'):
             id = filename.split(".")[0].replace("frame-", "")
