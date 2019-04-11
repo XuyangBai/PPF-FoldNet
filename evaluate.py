@@ -1,7 +1,7 @@
 import open3d
 import numpy as np
 import time
-from dataloader import get_train_loader
+from dataloader import get_dataloader
 from input_preparation import rgbd_to_point_cloud
 from scipy.spatial import KDTree
 
@@ -54,7 +54,7 @@ def is_matching_pairs(source, target, threshold=0.02):
         return False
 
 
-def evaluate(loader, tao1=0.3, tao2=0.05):
+def evaluate(model, loader, tao1=0.3, tao2=0.05):
     # model.eval()
     total_matching_fragments = 0
     pred_matching_fragments = 0
@@ -66,8 +66,8 @@ def evaluate(loader, tao1=0.3, tao2=0.05):
             continue
         else:
             total_matching_fragments += 1
-        # g_P = model.encoder(P)
-        # g_Q = model.encoder(Q)
+        g_P = model.encoder(P)
+        g_Q = model.encoder(Q)
         g_P = P
         g_Q = Q
         matching_points = calculate_M(g_P, g_Q)
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # print(res)
 
     dataroot = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/"
-    trainloader = get_train_loader(dataroot, batch_size=2)
+    trainloader = get_dataloader(dataroot, batch_size=2)
     for iter, (patches, ids) in enumerate(trainloader):
         # TODO: 现在是同一个scene下的两个不同的fragments, 因为sample是随机的没有判成是True
         print(ids)

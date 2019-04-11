@@ -36,12 +36,12 @@ def select_referenced_point(pcd, num_interest_points=2048):
     return open3d.geometry.select_down_sample(pcd, inds)
 
 
-def collect_local_neighbor(ref_pts, pcd, vicinity=0.3, num_points=1024):
+def collect_local_neighbor(ref_pcd, pcd, vicinity=0.3, num_points=1024):
     # collect local neighbor within vicinity for each interest point.
     # each local patch is downsampled to 1024 (setting of PPFNet p5.)
     kdtree = open3d.geometry.KDTreeFlann(pcd)
     dict = []
-    for point in ref_pts.points:
+    for point in ref_pcd.points:
         # Bug fix: here the first returned result will be itself. So the calculated ppf will be nan.
         [k, idx, variant] = kdtree.search_radius_vector_3d(point, vicinity)
         # random select fix number [num_points] of points to form the local patch.
@@ -123,7 +123,7 @@ def input_preprocess(data_dir, id, save_dir):
 
 if __name__ == "__main__":
     data_dir = "/data/3DMatch/test/sun3d-hotel_umd-maryland_hotel3/seq-01"
-   # data_dir = "/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01"
+    # data_dir = "/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01"
     for filename in os.listdir(data_dir):
         if filename.__contains__('color'):
             id = filename.split(".")[0].replace("frame-", "")

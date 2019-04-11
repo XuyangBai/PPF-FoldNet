@@ -1,6 +1,27 @@
 # PyTorch PPF-FoldNet
 This repo is implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322v1) in pytorch. 
 
+## Project Structure
+
+- `model.py`: define the PPF-FoldNet model which consists of an Encoder and a Decoder. The input is a batch of point cloud fragments `[bs, num_patches, num_points_per_patch, 4]`, output is the descriptor for each local patch in these point cloud, `[bs, num_patches, 512]`, where 512 is the default codeword length.
+- `input_preparation.py`: used before training, including: 
+    1. reconstruct point cloud from  rgbd image and depth image.
+    2. choose reference point(or interest point) from the point cloud.
+    3. collect neighboring points near each reference point.
+    4. build local patch for each reference point and their neighbor.
+    5. save the local patch as numpy array for later use.
+- `dataset.py`: define the Dataset, read from the files generated from input prepration stage.
+- `dataloader.py`: define the dataloader, nothing specical.
+- `loss.py`: define the Chamfer Loss.
+- `trainer.py`: the trainer class, handle the training process including snapshot, 
+- `train.py`: the entrance file, every time I start training, this file will be copied to the snapshot dictionary.
+- `evaluate_preparation.py`: used before final evaluation, including
+    1. get point cloud from '.ply' file and get the interest point coordinate from `.keypts.bin` file.
+    2. calculate the ppf representation for each interest point (similar process with input preparation)
+    3. save the descriptor for each interest point so that we can use the evaluation code provided by 3DMatch to get the final recall and precision.
+- `evaluate.py`: used in the evaluate stage, but currently it is still under construction.
+
+
 ## Milestone
 - 3.25: Initial Version
     - Realize the network architecuture of PPF-FoldNet(but actually is very similar with FoldingNet and I have partially achieve the result of FoldingNet, the reconstruction and interpolation looks good.)

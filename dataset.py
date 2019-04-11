@@ -21,7 +21,7 @@ class SunDataset(data.Dataset):
         self.num_patches = num_patches
 
         self.ids_list = [filename.split(".")[0] for filename in os.listdir(self.root)]
-        self.ids_list = list(set(self.ids_list))
+        self.ids_list = sorted(list(set(self.ids_list)))
         if split == 'train':
             self.ids_list = self.ids_list[0: int(0.8 * len(self.ids_list))]
         else:
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     datapath = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-test-processed"
     d = SunDataset(root=datapath, split='train')
     patches, id = d[0]
-    assert patches.shape == (2048, 1024, 4)
+    assert patches.shape == (32, 1024, 4)
     print(id)
     print(d.ids_list)
 
