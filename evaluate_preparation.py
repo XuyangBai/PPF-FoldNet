@@ -1,13 +1,16 @@
 import open3d
 import os
 import numpy as np
+import torch
 from input_preparation import _ppf
 from model import PPFFoldNet
 
-datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
-interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
-savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
-
+# datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
+# interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+# savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+datapath = "/data/3DMatch/test/sun3d-hotel_umd-maryland_hotel3/"
+interpath = "/data/3DMatch/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+savepath = "/data/3DMatch/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
 
 def get_pcd(filename):
     return open3d.read_point_cloud(os.path.join(datapath, filename + '.ply'))
@@ -35,14 +38,8 @@ def build_ppf_input(pcd, keypts):
     for i in range(keypts.shape[0]):
         _, id, _ = kdtree.search_knn_vector_3d(keypts[i], 1)
         keypts_id.append(id[0])
-    print(keypts.shape)
-    import time
-    start_time = time.time()
     neighbor = collect_local_neighbor(keypts_id, pcd, vicinity=0.3, num_points=1024)
-    print(time.time() - start_time)
     local_pachtes = build_local_patch(keypts_id, pcd, neighbor)
-    print(local_pachtes.shape)
-    print(time.time() - start_time)
     return local_pachtes
 
 
@@ -74,26 +71,34 @@ def build_local_patch(ref_inds, pcd, neighbor):
 
 
 def prepare_ppf_input():
-    for i in range(36):
+    for i in range(37):
         filename = 'cloud_bin_' + str(i)
         pcd = get_pcd(filename)
         keypts = get_keypts_desc(filename)
         local_patches = build_ppf_input(pcd, keypts)  # [num_keypts, 1024, 4]
         np.save(savepath + filename + ".ppf.bin", local_patches.astype(np.float32))
         print("save", filename + '.ppf.bin')
-        break
 
 
 def generate_descriptor(model):
-    for i in range(36):
-        filename = 'cloud_bin' + str(i) + ".ppf.bin"
-        local_patches = np.load(filename)
-        desc = model(local_patches)
-        np.save(filename + ".desc.ppf.bin", desc.astype(np.float32))
-        break
-    # after generate the desc file, can u
+    for i in range(37):
+        filename = 'cloud_bin_' + str(i) + ".ppf.bin.npy"
+        local_patches = np.load(savepath + filename)
+        input = torch.tensor(local_patches)
+        input = input.cuda()
+        model = model.cuda()
+        # cuda out of memry
+        desc_list = []
+        for i in range(5):
+            desc = model(input[i * 1000:i * 1000 + 1000, :, :])
+            desc_list.append(desc)
+        desc = torch.cat(desc_list, 0)
+        np.save(savepath + filename + ".desc.ppf.bin", desc.cpu().numpy().astype(np.float32))
+        print(filename + ".desc.ppf.bin")
 
 
 if __name__ == '__main__':
     model = PPFFoldNet(1024)
-    prepare_ppf_input()
+    # prepare_ppf_input()
+    # model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04100054/models/sun3d_best.pkl'))
+    generate_descriptor(model)

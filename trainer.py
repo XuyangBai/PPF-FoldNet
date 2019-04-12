@@ -92,11 +92,14 @@ class Trainer(object):
             if (iter + 1) % 100 == 0 and self.verbose:
                 iter_time = time.time() - epoch_start_time
                 print(f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {iter_time:.2f}s")
+            del loss
+            del output
         # finish one epoch
         epoch_time = time.time() - epoch_start_time
         self.train_hist['per_epoch_time'].append(epoch_time)
         self.train_hist['loss'].append(np.mean(loss_buf))
         print(f'Epoch {epoch+1}: Loss {np.mean(loss_buf)}, time {epoch_time:.4f}s')
+        del loss_buf
 
     def evaluate(self, epoch):
         self.model.eval()
