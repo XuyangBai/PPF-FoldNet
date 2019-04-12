@@ -81,24 +81,25 @@ def prepare_ppf_input():
 
 
 def generate_descriptor(model):
-    for i in range(37):
-        filename = 'cloud_bin_' + str(i) + ".ppf.bin.npy"
+    model.eval()
+    for j in range(37):
+        filename = 'cloud_bin_' + str(j) + ".ppf.bin.npy"
         local_patches = np.load(savepath + filename)
-        input = torch.tensor(local_patches)
-        input = input.cuda()
+        input_ = torch.tensor(local_patches)
+        input_ = input_.cuda()
         model = model.cuda()
         # cuda out of memry
         desc_list = []
-        for i in range(5):
-            desc = model(input[i * 1000:i * 1000 + 1000, :, :])
-            desc_list.append(desc)
-        desc = torch.cat(desc_list, 0)
-        np.save(savepath + filename + ".desc.ppf.bin", desc.cpu().numpy().astype(np.float32))
-        print(filename + ".desc.ppf.bin")
-
+        for i in range(100):
+            desc = model.encoder(input_[i*50:(i+1)*50, :, :])
+            desc_list.append(desc.detach().cpu().numpy())
+            del desc
+        desc = np.concatenate(desc_list, 0).reshape([5000, 512])
+        np.save(savepath + 'cloud_bin_' + str(j) + ".desc.ppf.bin", desc.astype(np.float32))
+        print('cloud_bin_' + str(j) + ".desc.ppf.bin")
 
 if __name__ == '__main__':
     model = PPFFoldNet(1024)
     # prepare_ppf_input()
-    # model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04100054/models/sun3d_best.pkl'))
+    model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04100054/models/sun3d_best.pkl'))
     generate_descriptor(model)

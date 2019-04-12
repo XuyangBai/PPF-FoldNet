@@ -120,4 +120,4 @@ class PPFFoldNet(nn.Module):
 if __name__ == '__main__':
     model = PPFFoldNet(1024)
     from torchsummary import summary
-    summary(model, (1024, 4), batch_size=100)
+    summary(model.cuda(), (1024, 4), batch_size=100)
