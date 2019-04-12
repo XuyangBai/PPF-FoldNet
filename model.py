@@ -4,8 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 import itertools
 from loss import ChamferLoss
-import inspect
-from gpu_mem_track import MemTracker
+
 
 class Encoder(nn.Module):
     def __init__(self, num_points=1024):
@@ -93,7 +92,7 @@ class Decoder(nn.Module):
         after_folding1 = self.mlp1(concate1)  # [bs, 4, m]
         concate2 = torch.cat((input, after_folding1), dim=1)  # [bs, 516, m]
         after_folding2 = self.mlp2(concate2)  # [bs, 4, m]
-        return after_folding2.transpose(1, 2)  # [bs, m ,4]
+        return after_folding2.transpose(1, 2)  # [bs, m, 4]
 
 
 class PPFFoldNet(nn.Module):
@@ -105,20 +104,20 @@ class PPFFoldNet(nn.Module):
         self.loss = ChamferLoss()
 
     def forward(self, input):
-        frame = inspect.currentframe()
-        gpu_tracker = MemTracker(frame)
-        gpu_tracker.track()
-
         codeword = self.encoder(input)
-        gpu_tracker.track()
         output = self.decoder(codeword)
-        gpu_tracker.track()
         return output
 
     def get_parameter(self):
         return list(self.encoder.parameters()) + list(self.decoder.parameters())
 
     def get_loss(self, input, output):
-        # input shape  [bs, 2048, 3]
-        # output shape [bs, 2025, 3]
+        # input shape  [bs, 2048, 4]
+        # output shape [bs, 2025, 4]
         return self.loss(input, output)
+
+
+if __name__ == '__main__':
+    model = PPFFoldNet(1024)
+    from torchsummary import summary
+    summary(model, (1024, 4), batch_size=100)
