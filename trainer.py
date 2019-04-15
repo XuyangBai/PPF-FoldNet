@@ -65,6 +65,7 @@ class Trainer(object):
             if self.writer:
                 self.writer.add_scalar('Learning Rate', self._get_lr(), epoch)
                 self.writer.add_scalar('Loss', res['loss'], epoch)
+                self.writer.add_scalar('Train Loss', self.train_hist['loss'], epoch) 
 
         # finish all epoch
         self.train_hist['total_time'].append(time.time() - start_time)
@@ -87,7 +88,8 @@ class Trainer(object):
             # backward
             loss.backward()
             self.optimizer.step()
-            loss_buf.append(loss.detach().cpu().numpy())
+            #loss_buf.append(loss.detach().cpu().numpy())
+            loss_buf.append(float(loss))
 
             if (iter + 1) % 100 == 0 and self.verbose:
                 iter_time = time.time() - epoch_start_time
@@ -110,11 +112,14 @@ class Trainer(object):
                 patches = patches.cuda()
             output = self.model(patches)
             loss = self.model.get_loss(patches, output)
-            loss_buf.append(loss.detach().cpu().numpy())
+            loss_buf.append(float(loss))
+            del loss
+            del output
         self.model.train()
         res = {
             'loss': np.mean(loss_buf),
         }
+        del loss_buf
         return res
 
     def _snapshot(self, epoch):
