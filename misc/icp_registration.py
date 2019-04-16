@@ -1,7 +1,7 @@
 from open3d import *
 import numpy as np
 import copy
-from input_preparation import rgbd_to_point_cloud
+from input_preparation import rgbd_to_point_cloud, cal_local_normal
 
 
 def draw_registration_result(source, target, transformation):
@@ -19,7 +19,11 @@ if __name__ == "__main__":
     data_dir = "data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train"
     source = rgbd_to_point_cloud(data_dir, "000002")
     target = rgbd_to_point_cloud(data_dir, "000003")
+    cal_local_normal(source)
+    cal_local_normal(target)
     threshold = 0.02
+   # threshold is the  – Maximum correspondence points pair distance
+
     # trans_init = np.asarray(
     #             [[0.862, 0.011, -0.507,  0.5],
     #             [-0.139, 0.967, -0.215,  0.7],

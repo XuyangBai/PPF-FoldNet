@@ -5,6 +5,7 @@ from torch import optim
 from trainer import Trainer
 from model import PPFFoldNet
 from dataloader import get_dataloader
+from new_model import PPFFoldNet_new
 
 
 class Args(object):
@@ -25,12 +26,14 @@ class Args(object):
         self.dataset = 'sun3d'
         self.data_train_dir = '/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01-processed/'
         self.data_test_dir = '/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01-processed'
+        # self.data_train_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/'
+        # self.data_test_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed'
 
-        self.gpu_mode = True
+        self.gpu_mode = False
         self.verbose = True
 
         # model & optimizer
-        self.model = PPFFoldNet(self.num_points_per_patch)
+        self.model = PPFFoldNet_new(self.num_patches, self.num_points_per_patch)
         self.pretrain = ''
         self.parameter = self.model.get_parameter()
         self.optimizer = optim.Adam(self.parameter, lr=0.001, betas=(0.9, 0.999), weight_decay=1e-6)
@@ -39,13 +42,13 @@ class Args(object):
 
         # dataloader
         self.train_loader = get_dataloader(root=self.data_train_dir,
-                                           batch_size=self.batch_size,
+                                           batch_size=1,
                                            split='train',
                                            num_patches=self.num_patches,
                                            shuffle=False
                                            )
         self.test_loader = get_dataloader(root=self.data_test_dir,
-                                          batch_size=self.batch_size,  # batch size of test loader have to be 2
+                                          batch_size=1,
                                           split='test',
                                           num_patches=self.num_patches,
                                           shuffle=False

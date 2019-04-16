@@ -13,7 +13,7 @@ class SunDataset(data.Dataset):
     def __init__(self,
                  root,
                  split='train',
-                 num_patches=32,  # num of patches per point cloud.
+                 num_patches=32,  # num of patches per point cloud. which is also the batch size of the input.
                  data_augmentation=True):
         self.root = root
         self.split = split
