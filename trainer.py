@@ -59,15 +59,12 @@ class Trainer(object):
             if epoch % self.scheduler_interval == 0:
                 self.scheduler.step()
 
-            if (epoch + 1) % self.snapshot_interval == 0:
-                self._snapshot(epoch + 1)
-
             if self.writer:
                 self.writer.add_scalar('Learning Rate', self._get_lr(), epoch)
                 self.writer.add_scalar('Loss', res['loss'], epoch)
-                self.writer.add_scalar('Train Loss', self.train_hist['loss'], epoch) 
+                self.writer.add_scalar('Train Loss', self.train_hist['loss'][-1], epoch)
 
-        # finish all epoch
+                # finish all epoch
         self.train_hist['total_time'].append(time.time() - start_time)
         print("Avg one epoch time: %.2f, total %d epochs time: %.2f" % (np.mean(self.train_hist['per_epoch_time']),
                                                                         self.epoch, self.train_hist['total_time'][0]))
@@ -88,7 +85,7 @@ class Trainer(object):
             # backward
             loss.backward()
             self.optimizer.step()
-            #loss_buf.append(loss.detach().cpu().numpy())
+            # loss_buf.append(loss.detach().cpu().numpy())
             loss_buf.append(float(loss))
 
             if (iter + 1) % 100 == 0 and self.verbose:

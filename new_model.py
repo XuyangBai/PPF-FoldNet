@@ -8,18 +8,19 @@ from torchsummary import summary
 
 
 class Encoder(nn.Module):
-    def __init__(self, num_points=1024):
+    def __init__(self, num_patches=32, num_points_per_patch=1024):
         super(Encoder, self).__init__()
-        self.num_points = num_points
-        self.conv1 = nn.Conv1d(4, 64, 1)
+        self.num_patches = num_patches
+        self.num_points_per_patches = num_points_per_patch
+        self.conv1 = nn.Linear(4, 64)
         self.bn1 = nn.BatchNorm1d(64)
         self.relu1 = nn.ReLU()
 
-        self.conv2 = nn.Conv1d(64, 128, 1)
+        self.conv2 = nn.Linear(64, 128)
         self.bn2 = nn.BatchNorm1d(128)
         self.relu2 = nn.ReLU()
 
-        self.conv3 = nn.Conv1d(128, 256, 1)
+        self.conv3 = nn.Linear(128, 256)
         self.bn3 = nn.BatchNorm1d(256)
         self.relu3 = nn.ReLU()
 
@@ -30,54 +31,55 @@ class Encoder(nn.Module):
 
     def forward(self, input):
         # origin shape from dataloader [bs*32, 1024(num_points), 4]
-        input = input.transpose(2, 1).float()
-        x = self.relu1(self.bn1(self.conv1(input)))
+        # input = input.transpose(-1, -2).float()
+        x = self.relu1(self.conv1(input))
         local_feature_1 = x  # save the  low level features to concatenate this global feature.
-        x = self.relu2(self.bn2(self.conv2(x)))
+        x = self.relu2(self.conv2(x))
         local_feature_2 = x
-        x = self.relu3(self.bn3(self.conv3(x)))
+        x = self.relu3(self.conv3(x))
         local_feature_3 = x
-        x = torch.max(x, 2, keepdim=True)[0]
-        global_feature = x.view(-1, 256, 1).repeat(1, 1, 1024)
-        feature = torch.cat([local_feature_1, local_feature_2, local_feature_3, global_feature],
-                            1)  # [bs*32, 704, 1024]
+        # TODO: max at the second dimension, which means that for one local patch, choose the largest feature.
+        x = torch.max(x, 1, keepdim=True)[0]
+        global_feature = x.repeat([1, self.num_points_per_patches, 1])
+        # feature shape: [num_patches, num_points_per_patch, 704]
+        feature = torch.cat([local_feature_1, local_feature_2, local_feature_3, global_feature], -1)
 
         # TODO: add batch_norm or not?
-        x = F.relu(self.fc1(feature.transpose(1, 2)))
+        x = F.relu(self.fc1(feature))
         x = F.relu(self.fc2(x))
 
+        # TODO: still max at the second dimension.
         return torch.max(x, 1, keepdim=True)[0]  # [bs, 1, 512]
 
 
 class Decoder(nn.Module):
-    def __init__(self, num_points=1024, m=1024):
+    def __init__(self, num_points_per_patch=1024):
         super(Decoder, self).__init__()
-        self.n = num_points  # input point cloud size.
-        self.m = m  # 32 * 32
+        self.m = num_points_per_patch  # 32 * 32
         self.meshgrid = [[-0.3, 0.3, 32], [-0.3, 0.3, 32]]
         self.mlp1 = nn.Sequential(
-            nn.Conv1d(514, 256, 1),
+            nn.Linear(514, 256),
             nn.ReLU(),
-            nn.Conv1d(256, 128, 1),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Conv1d(128, 64, 1),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Conv1d(64, 32, 1),
+            nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Conv1d(32, 4, 1),
+            nn.Linear(32, 4),
             nn.ReLU(),
         )
 
         self.mlp2 = nn.Sequential(
-            nn.Conv1d(516, 256, 1),
+            nn.Linear(516, 256),
             nn.ReLU(),
-            nn.Conv1d(256, 128, 1),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Conv1d(128, 64, 1),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Conv1d(64, 32, 1),
+            nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Conv1d(32, 4, 1),
+            nn.Linear(32, 4),
             nn.ReLU(),
         )
 
@@ -95,28 +97,38 @@ class Decoder(nn.Module):
         return grid.float()
 
     def forward(self, input):
-        input = input.transpose(1, 2).repeat(1, 1, self.m)  # [bs, 512, m]
-        grid = self.build_grid(input.shape[0]).transpose(1, 2)  # [bs, 2, m]
+        input = input.repeat(1, self.m, 1)  # [bs, m, 512]
+        grid = self.build_grid(input.shape[0])  # [bs, m, 2]
         if torch.cuda.is_available():
             grid = grid.cuda()
-        concate1 = torch.cat((input, grid), dim=1)  # [bs, 514, m]
-        after_folding1 = self.mlp1(concate1)  # [bs, 4, m]
-        concate2 = torch.cat((input, after_folding1), dim=1)  # [bs, 516, m]
-        after_folding2 = self.mlp2(concate2)  # [bs, 4, m]
-        return after_folding2.transpose(1, 2)  # [bs, m, 4]
+        concate1 = torch.cat((input, grid), dim=-1)  # [bs, m, 514]
+        after_folding1 = self.mlp1(concate1)  # [bs, m, 4]
+        concate2 = torch.cat((input, after_folding1), dim=-1)  # [bs, m, 516]
+        after_folding2 = self.mlp2(concate2)  # [bs, m, 4]
+        return after_folding2  # [bs, m, 4]
 
 
 class PPFFoldNet_new(nn.Module):
-    def __init__(self, num_points):
-        super(PPFFoldNet_new, self).__init__()
+    """
+    This model is similar with PPFFoldNet defined in model.py, the difference is:
+        1. I use Linear layer to replace Conv1d because the test shows that Linear is faster.
+        2. Different skip connection scheme.
+    """
 
-        self.encoder = Encoder(num_points=num_points)
-        self.decoder = Decoder(num_points=num_points, m=num_points)
+    def __init__(self, num_patches=32, num_points_per_patch=1024):
+        super(PPFFoldNet_new, self).__init__()
+        self.encoder = Encoder(num_patches=num_patches, num_points_per_patch=num_points_per_patch)
+        self.decoder = Decoder(num_points_per_patch=num_points_per_patch)
         self.loss = ChamferLoss()
-        summary(self.cuda(),(1024, 4), batch_size=100)
+
+        # Print the params size of this model.
+        if torch.cuda.is_available():
+            summary(self.cuda(), (1024, 4), batch_size=100)
+        else:
+            summary(self, (1024, 4), batch_size=100)
 
     def forward(self, input):
-        codeword = self.encoder(input)
+        codeword = self.encoder(input.float())
         output = self.decoder(codeword)
         return output
 
@@ -124,10 +136,12 @@ class PPFFoldNet_new(nn.Module):
         return list(self.encoder.parameters()) + list(self.decoder.parameters())
 
     def get_loss(self, input, output):
-        # input shape  [bs, 2048, 4]
-        # output shape [bs, 2025, 4]
         return self.loss(input, output)
 
 
 if __name__ == '__main__':
-    model = PPFFoldNet_new(1024)
+    input = torch.rand(32, 1024, 4)
+    model = PPFFoldNet_new(num_patches=32, num_points_per_patch=1024)
+    output = model(input)
+    print("Input shape:", input.shape)
+    print("Output shape:", output.shape)
