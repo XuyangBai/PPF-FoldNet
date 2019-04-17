@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 
 
 def rgbd_to_point_cloud(data_dir, ind, show=False):
-    color_raw = open3d.read_image(f"{data_dir}/frame-{ind}.color.png")
-    depth_raw = open3d.read_image(f"{data_dir}/frame-{ind}.depth.png")
+    color_raw = open3d.read_image(f"{data_dir}/{ind}.color.png")
+    depth_raw = open3d.read_image(f"{data_dir}/{ind}.depth.png")
     rgbd_image = open3d.create_rgbd_image_from_color_and_depth(color_raw, depth_raw, depth_trunc=10)
     # print(rgbd_image)
     intrinstic = open3d.camera.PinholeCameraIntrinsic()
     intrinstic.set_intrinsics(640, 480, 5.70342205e+02, 5.70342205e+02, 3.20000000e+02, 2.40000000e+02)
-    matrix = np.loadtxt(f"{data_dir}/frame-{ind}.pose.txt")
+    matrix = np.loadtxt(f"{data_dir}/{ind}.pose.txt")
     pcd = open3d.create_point_cloud_from_rgbd_image(rgbd_image, intrinstic, extrinsic=matrix)
     if show:
         open3d.draw_geometries([pcd])
@@ -28,15 +28,15 @@ def cal_local_normal(pcd):
         return False
 
 
-def select_referenced_point(pcd, num_interest_points=2048):
+def select_referenced_point(pcd, num_patches=2048):
     # A point sampling algorithm for 3d matching of irregular geometries.
     pts = np.asarray(pcd.points)
     num_points = pts.shape[0]
-    inds = np.random.choice(range(num_points), num_interest_points, replace=False)
+    inds = np.random.choice(range(num_points), num_patches, replace=False)
     return open3d.geometry.select_down_sample(pcd, inds)
 
 
-def collect_local_neighbor(ref_pcd, pcd, vicinity=0.3, num_points=1024):
+def collect_local_neighbor(ref_pcd, pcd, vicinity=0.3, num_points_per_patch=1024):
     # collect local neighbor within vicinity for each interest point.
     # each local patch is downsampled to 1024 (setting of PPFNet p5.)
     kdtree = open3d.geometry.KDTreeFlann(pcd)
@@ -45,10 +45,10 @@ def collect_local_neighbor(ref_pcd, pcd, vicinity=0.3, num_points=1024):
         # Bug fix: here the first returned result will be itself. So the calculated ppf will be nan.
         [k, idx, variant] = kdtree.search_radius_vector_3d(point, vicinity)
         # random select fix number [num_points] of points to form the local patch.
-        if k > num_points:
-            idx = np.random.choice(idx[1:], num_points, replace=False)
+        if k > num_points_per_patch:
+            idx = np.random.choice(idx[1:], num_points_per_patch, replace=False)
         else:
-            idx = np.random.choice(idx[1:], num_points)
+            idx = np.random.choice(idx[1:], num_points_per_patch)
         dict.append(idx)
     return dict
 
@@ -117,15 +117,42 @@ def input_preprocess(data_dir, id, save_dir):
     # save the local_patch and reference point cloud for one point cloud fragment.
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-    np.save(f'{save_dir}/frame-{id}.npy', local_patch)
-    open3d.write_point_cloud(f"{save_dir}/frame-{id}.pcd", ref_pcd)
+    np.save(f'{save_dir}/{id}.npy', local_patch)
+    open3d.write_point_cloud(f"{save_dir}/{id}.pcd", ref_pcd)
+
+
+def get_local_patches_on_the_fly(data_dir, ind, num_patches, num_points_per_patch=1024):
+    """
+    similar function with input_preprocess, on-the-fly select the local patch
+    """
+    pcd = rgbd_to_point_cloud(data_dir, ind)
+    cal_local_normal(pcd)
+    ref_pcd = select_referenced_point(pcd, num_patches)
+    neighbor = collect_local_neighbor(ref_pcd, pcd, num_points_per_patch=num_points_per_patch)
+    local_patch = build_local_patch(ref_pcd, pcd, neighbor)
+    return local_patch
 
 
 if __name__ == "__main__":
-    data_dir = "/data/3DMatch/test/sun3d-hotel_umd-maryland_hotel3/seq-01"
-    # data_dir = "/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01"
+    # data_dir = "./data/train/sun3d-hotel_umd-maryland_hotel3/seq-01"
+    data_dir = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01"
+    # i = 0
+    # start_time = time.time()
+    # for filename in os.listdir(data_dir):
+    #     if filename.__contains__('color'):
+    #         id = filename.split(".")[0]
+    #         input_preprocess(data_dir, id, data_dir + '-processed')
+    #         print("Finish", id)
+    #         i = i + 1
+    #     if i == 10:
+    #         print(time.time() - start_time)
+    i = 0
+    start_time = time.time()
     for filename in os.listdir(data_dir):
         if filename.__contains__('color'):
-            id = filename.split(".")[0].replace("frame-", "")
-            input_preprocess(data_dir, id, data_dir + '-processed')
+            id = filename.split(".")[0]
+            get_local_patches_on_the_fly(data_dir, id, 32, 1024)
             print("Finish", id)
+            i = i + 1
+        if i == 10:
+            print(time.time() - start_time)

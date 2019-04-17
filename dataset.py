@@ -3,10 +3,10 @@ import os
 import os.path
 import open3d
 import numpy as np
-import sys
+import time
 from tqdm import tqdm
 import json
-from input_preparation import input_preprocess
+from input_preparation import get_local_patches_on_the_fly
 
 
 class SunDataset(data.Dataset):
@@ -14,11 +14,15 @@ class SunDataset(data.Dataset):
                  root,
                  split='train',
                  num_patches=32,  # num of patches per point cloud. which is also the batch size of the input.
-                 data_augmentation=True):
+                 num_points_per_patch=1024,
+                 data_augmentation=True,
+                 on_the_fly=True):
         self.root = root
         self.split = split
         self.data_augmentation = data_augmentation
         self.num_patches = num_patches
+        self.num_points_per_patch = num_points_per_patch
+        self.on_the_fly = on_the_fly
 
         self.ids_list = [filename.split(".")[0] for filename in os.listdir(self.root)]
         self.ids_list = sorted(list(set(self.ids_list)))
@@ -28,9 +32,14 @@ class SunDataset(data.Dataset):
             self.ids_list = self.ids_list[int(0.8 * len(self.ids_list)):-1]
 
     def __getitem__(self, index):
+        id = self.ids_list[index]
+        if self.on_the_fly:
+            return get_local_patches_on_the_fly(self.root, id, self.num_patches, self.num_points_per_patch), id
+
         ind = np.random.choice(range(2048), self.num_patches, replace=False)
         patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
         return patches[ind], self.ids_list[index]
+
         # if self.split == 'train':
         #     patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
         #     return patches
@@ -44,14 +53,18 @@ class SunDataset(data.Dataset):
 
 
 if __name__ == '__main__':
-    datapath = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-test-processed"
-    d = SunDataset(root=datapath, split='train')
-    patches, id = d[0]
-    assert patches.shape == (32, 1024, 4)
-    print(id)
+    datapath = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train"
+    d = SunDataset(root=datapath, split='train', on_the_fly=True)
     print(d.ids_list)
+    start_time = time.time()
+    for i in range(10):
+        patches, id = d[0]
+    print(f"On the fly: {time.time() - start_time}")
 
-    # d = SunDataset(root=datapath, split='test')
-    # patches, pcd = d[0]
-    # assert patches.shape == (2048, 1024, 4)
-    # print(pcd)
+    datapath = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed"
+    d = SunDataset(root=datapath, split='train', on_the_fly=False)
+    print(d.ids_list)
+    start_time = time.time()
+    for i in range(10):
+        patches, id = d[0]
+    print(f"Not On the fly: {time.time() - start_time}")

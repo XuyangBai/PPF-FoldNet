@@ -17,12 +17,12 @@ class Args(object):
         os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
         self.epoch = 150
-        self.num_patches = 32
+        self.num_patches = 128
         self.num_points_per_patch = 1024  # num of points per patches
         # TODO: I do not know whether this is correct.
         #  I pick all the local patches from one point cloud fragment
         #  So the input to the network is [bs, 2048, num_points_per_patch, 4], but out of memory even batch size = 1
-        self.batch_size = 2
+        self.batch_size = 1
         self.dataset = 'sun3d'
         self.data_train_dir = '/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01-processed/'
         self.data_test_dir = '/data/3DMatch/train/sun3d-harvard_c11-hv_c11_2/seq-01-processed'
@@ -45,13 +45,17 @@ class Args(object):
                                            batch_size=1,
                                            split='train',
                                            num_patches=self.num_patches,
-                                           shuffle=False
+                                           num_points_per_patch=self.num_points_per_patch,
+                                           shuffle=False,
+                                           on_the_fly=True
                                            )
         self.test_loader = get_dataloader(root=self.data_test_dir,
                                           batch_size=1,
                                           split='test',
                                           num_patches=self.num_patches,
-                                          shuffle=False
+                                          num_points_per_patch=self.num_points_per_patch,
+                                          shuffle=False,
+                                          on_the_fly=True
                                           )
         print("Training set size:", self.train_loader.dataset.__len__())
         print("Test set size:", self.test_loader.dataset.__len__())

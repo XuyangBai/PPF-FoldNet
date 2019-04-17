@@ -123,9 +123,9 @@ class PPFFoldNet_new(nn.Module):
 
         # Print the params size of this model.
         if torch.cuda.is_available():
-            summary(self.cuda(), (1024, 4), batch_size=100)
+            summary(self.cuda(), (1024, 4), batch_size=num_patches)
         else:
-            summary(self, (1024, 4), batch_size=100)
+            summary(self, (1024, 4), batch_size=num_patches)
 
     def forward(self, input):
         codeword = self.encoder(input.float())
