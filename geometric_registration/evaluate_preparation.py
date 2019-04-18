@@ -4,15 +4,15 @@ import time
 import numpy as np
 import torch
 from input_preparation import _ppf
-from model import PPFFoldNet
+from new_model import PPFFoldNet_new
 
 
-def get_pcd(filename):
-    return open3d.read_point_cloud(os.path.join(datapath, filename + '.ply'))
+def get_pcd(pcdpath, filename):
+    return open3d.read_point_cloud(os.path.join(pcdpath, filename + '.ply'))
 
 
-def get_keypts_desc(filename):
-    keypts = np.fromfile(os.path.join(interpath, filename + '.keypts.bin'), dtype=np.float32)
+def get_keypts_desc(keyptspath, filename):
+    keypts = np.fromfile(os.path.join(keyptspath, filename + '.keypts.bin'), dtype=np.float32)
     num_keypts = int(keypts[0])
     keypts = keypts[1:].reshape([num_keypts, 3])
 
@@ -65,24 +65,24 @@ def build_local_patch(ref_inds, pcd, neighbor):
     return local_patch
 
 
-def prepare_ppf_input(datapath, ppfpath):
-    num_frag = len(os.listdir(datapath))
+def prepare_ppf_input(pcdpath, ppfpath, keyptspath):
+    num_frag = len(os.listdir(pcdpath))
     num_ppf = len(os.listdir(ppfpath))
     if num_frag == num_ppf:
         print("PPF already prepared.")
         return
     for i in range(num_frag):
         filename = 'cloud_bin_' + str(i)
-        pcd = get_pcd(filename)
-        keypts = get_keypts_desc(filename)
+        pcd = get_pcd(pcdpath, filename)
+        keypts = get_keypts_desc(keyptspath, filename)
         local_patches = build_ppf_input(pcd, keypts)  # [num_keypts, 1024, 4]
         np.save(ppfpath + filename + ".ppf.bin", local_patches.astype(np.float32))
         print("save", filename + '.ppf.bin')
 
 
-def generate_descriptor(model, desc_name, datapath, ppfpath, ppfdescpath):
+def generate_descriptor(model, desc_name, pcdpath, ppfpath, ppfdescpath):
     model.eval()
-    num_frag = len(os.listdir(datapath))
+    num_frag = len(os.listdir(pcdpath))
     for j in range(num_frag):
         local_patches = np.load(ppfpath + 'cloud_bin_' + str(j) + ".ppf.bin.npy")
         input_ = torch.tensor(local_patches)
@@ -100,32 +100,31 @@ def generate_descriptor(model, desc_name, datapath, ppfpath, ppfdescpath):
 
 if __name__ == '__main__':
     scene_list = [
-        '7-scenes-redkitchen-evaluation',
-        'sun3d-home_at-home_at_scan1_2013_jan_1-evaluation',
-        'sun3d-home_md-home_md_scan9_2012_sep_30-evaluation',
-        'sun3d-hotel_uc-scan3-evaluation',
-        'sun3d-hotel_umd-maryland_hotel1-evaluation',
-        'sun3d-hotel_umd-maryland_hotel3-evaluation',
-        'sun3d-mit_76_studyroom-76-1studyroom2-evaluation',
-        'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika-evaluation'
+        '7-scenes-redkitchen',
+        'sun3d-home_at-home_at_scan1_2013_jan_1',
+        'sun3d-home_md-home_md_scan9_2012_sep_30',
+        'sun3d-hotel_uc-scan3',
+        'sun3d-hotel_umd-maryland_hotel1',
+        'sun3d-hotel_umd-maryland_hotel3',
+        'sun3d-mit_76_studyroom-76-1studyroom2',
+        'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
     ]
     # datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
     # interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
     # savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
     for scene in scene_list:
-        datapath = f"/data/3DMatch/fragments/{scene}/"
+        pcdpath = f"/data/3DMatch/fragments/{scene}/"
         interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
-        keypointpath = os.path.join(interpath, "keypoints/")
+        keyptspath = os.path.join(interpath, "keypoints/")
         ppfpath = os.path.join(interpath, "ppf/")
         ppfdescpath = os.path.join(interpath, "ppf_desc/")
-        model = PPFFoldNet(1024)
-        # prepare_ppf_input()
-        model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04100054/models/sun3d_best.pkl'))
+        model = PPFFoldNet_new(100, 1024)
+        model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04170839/models/sun3d_best.pkl'))
         start_time = time.time()
         print(f"Begin prepare ppf input for {scene}")
-        prepare_ppf_input(datapath=datapath, ppfpath=ppfpath)
+        prepare_ppf_input(pcdpath=pcdpath, ppfpath=ppfpath, keyptspath=keyptspath)
         print(f"Finish in {time.time() - start_time}")
         start_time = time.time()
         print(f"Begin Processing {scene}")
-        generate_descriptor(model, desc_name='ppf', datapath=datapath, ppfpath=ppfpath, ppfdescpath=ppfdescpath)
-        print(f"Finish in {time.time - start_time}s")
+        generate_descriptor(model, desc_name='ppf', pcdpath=pcdpath, ppfpath=ppfpath, ppfdescpath=ppfdescpath)
+        print(f"Finish in {time.time() - start_time}s")
