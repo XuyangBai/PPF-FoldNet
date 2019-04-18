@@ -1,5 +1,6 @@
 import open3d
 import os
+import time
 import numpy as np
 import torch
 from input_preparation import _ppf
@@ -64,8 +65,13 @@ def build_local_patch(ref_inds, pcd, neighbor):
     return local_patch
 
 
-def prepare_ppf_input():
-    for i in range(37):
+def prepare_ppf_input(datapath, ppfpath):
+    num_frag = len(os.listdir(datapath))
+    num_ppf = len(os.listdir(ppfpath))
+    if num_frag == num_ppf:
+        print("PPF already prepared.")
+        return
+    for i in range(num_frag):
         filename = 'cloud_bin_' + str(i)
         pcd = get_pcd(filename)
         keypts = get_keypts_desc(filename)
@@ -74,12 +80,11 @@ def prepare_ppf_input():
         print("save", filename + '.ppf.bin')
 
 
-def generate_descriptor(model, desc_name):
+def generate_descriptor(model, desc_name, datapath, ppfpath, ppfdescpath):
     model.eval()
     num_frag = len(os.listdir(datapath))
     for j in range(num_frag):
-        filename = 'cloud_bin_' + str(j) + f".{desc_name}.bin.npy"
-        local_patches = np.load(ppfpath + filename)
+        local_patches = np.load(ppfpath + 'cloud_bin_' + str(j) + ".ppf.bin.npy")
         input_ = torch.tensor(local_patches)
         input_ = input_.cuda()
         model = model.cuda()
@@ -90,20 +95,37 @@ def generate_descriptor(model, desc_name):
             desc_list.append(desc.detach().cpu().numpy())
             del desc
         desc = np.concatenate(desc_list, 0).reshape([5000, 512])
-        np.save(ppfdescpath + '/cloud_bin_' + str(j) + ".desc.ppf2.bin", desc.astype(np.float32))
-        print('cloud_bin_' + str(j) + ".desc.ppf2.bin")
+        np.save(ppfdescpath + 'cloud_bin_' + str(j) + f".desc.{desc_name}.bin", desc.astype(np.float32))
 
 
 if __name__ == '__main__':
+    scene_list = [
+        '7-scenes-redkitchen-evaluation',
+        'sun3d-home_at-home_at_scan1_2013_jan_1-evaluation',
+        'sun3d-home_md-home_md_scan9_2012_sep_30-evaluation',
+        'sun3d-hotel_uc-scan3-evaluation',
+        'sun3d-hotel_umd-maryland_hotel1-evaluation',
+        'sun3d-hotel_umd-maryland_hotel3-evaluation',
+        'sun3d-mit_76_studyroom-76-1studyroom2-evaluation',
+        'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika-evaluation'
+    ]
     # datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
     # interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
     # savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
-    datapath = "/data/3DMatch/fragments/sun3d-hotel_umd-maryland_hotel3/"
-    interpath = "/data/3DMatch/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
-    keypointpath = os.path.join(interpath, "keypoints/")
-    ppfpath = os.path.join(interpath, "ppf/")
-    ppfdescpath = os.path.join(interpath, "ppf_desc/")
-    model = PPFFoldNet(1024)
-    # prepare_ppf_input()
-    model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04100054/models/sun3d_best.pkl'))
-    generate_descriptor(model, desc_name='ppf2')
+    for scene in scene_list:
+        datapath = f"/data/3DMatch/fragments/{scene}/"
+        interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
+        keypointpath = os.path.join(interpath, "keypoints/")
+        ppfpath = os.path.join(interpath, "ppf/")
+        ppfdescpath = os.path.join(interpath, "ppf_desc/")
+        model = PPFFoldNet(1024)
+        # prepare_ppf_input()
+        model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04100054/models/sun3d_best.pkl'))
+        start_time = time.time()
+        print(f"Begin prepare ppf input for {scene}")
+        prepare_ppf_input(datapath=datapath, ppfpath=ppfpath)
+        print(f"Finish in {time.time() - start_time}")
+        start_time = time.time()
+        print(f"Begin Processing {scene}")
+        generate_descriptor(model, desc_name='ppf', datapath=datapath, ppfpath=ppfpath, ppfdescpath=ppfdescpath)
+        print(f"Finish in {time.time - start_time}s")
