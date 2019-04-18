@@ -87,8 +87,8 @@ if __name__ == '__main__':
     # print(res)
 
     dataroot = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/"
-    trainloader = get_dataloader(dataroot, batch_size=2)
-    for iter, (patches, ids) in enumerate(trainloader):
+    testloader = get_dataloader(dataroot, batch_size=2)
+    for iter, (patches, ids) in enumerate(testloader):
         # TODO: 现在是同一个scene下的两个不同的fragments, 因为sample是随机的没有判成是True
         print(ids)
         pcd1 = open3d.read_point_cloud(dataroot + ids[0] + ".pcd")

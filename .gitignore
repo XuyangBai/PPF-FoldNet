@@ -4,3 +4,5 @@ tensorboard/*
 *.pyc
 .DS_Store
 .idea/
+geometric_registration/fragments/*
+geometric_registration/intermediate-files-real/*

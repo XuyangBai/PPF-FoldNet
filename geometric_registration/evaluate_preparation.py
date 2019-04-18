@@ -3,28 +3,10 @@ import os
 import time
 import numpy as np
 import torch
+
+from geometric_registration.utils import get_pcd, get_keypts
 from input_preparation import _ppf
 from new_model import PPFFoldNet_new
-
-
-def get_pcd(pcdpath, filename):
-    return open3d.read_point_cloud(os.path.join(pcdpath, filename + '.ply'))
-
-
-def get_keypts_desc(keyptspath, filename):
-    keypts = np.fromfile(os.path.join(keyptspath, filename + '.keypts.bin'), dtype=np.float32)
-    num_keypts = int(keypts[0])
-    keypts = keypts[1:].reshape([num_keypts, 3])
-
-    return keypts
-
-
-def get_desc(filename):
-    desc = np.fromfile(os.path.join(interpath, filename + '.desc.3dmatch.bin'), dtype=np.float32)
-    num_desc = int(desc[0])
-    desc_size = int(desc[1])
-    desc = desc[2:].reshape([num_desc, desc_size])
-    return desc
 
 
 def build_ppf_input(pcd, keypts):
@@ -74,7 +56,7 @@ def prepare_ppf_input(pcdpath, ppfpath, keyptspath):
     for i in range(num_frag):
         filename = 'cloud_bin_' + str(i)
         pcd = get_pcd(pcdpath, filename)
-        keypts = get_keypts_desc(keyptspath, filename)
+        keypts = get_keypts(keyptspath, filename)
         local_patches = build_ppf_input(pcd, keypts)  # [num_keypts, 1024, 4]
         np.save(ppfpath + filename + ".ppf.bin", local_patches.astype(np.float32))
         print("save", filename + '.ppf.bin')

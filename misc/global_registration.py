@@ -33,8 +33,8 @@ def preprocess_point_cloud(pcd, voxel_size):
 def prepare_dataset(voxel_size):
     print(":: Load two point clouds and disturb initial pose.")
     data_dir = "data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train"
-    source = rgbd_to_point_cloud(data_dir, "000002")
-    target = rgbd_to_point_cloud(data_dir, "000003")
+    source = rgbd_to_point_cloud(data_dir, "frame-000002")
+    target = rgbd_to_point_cloud(data_dir, "frame-000003")
     cal_local_normal(source)
     cal_local_normal(target)
     trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0],
@@ -42,7 +42,7 @@ def prepare_dataset(voxel_size):
                              [0.0, 1.0, 0.0, 0.0],
                              [0.0, 0.0, 0.0, 1.0]])
     source.transform(trans_init)
-    draw_registration_result(source, target, np.identity(4))
+    # draw_registration_result(source, target, np.identity(4))
 
     source_down, source_fpfh = preprocess_point_cloud(source, voxel_size)
     target_down, target_fpfh = preprocess_point_cloud(target, voxel_size)
@@ -81,8 +81,8 @@ if __name__ == "__main__":
 
     result_ransac = execute_global_registration(source_down, target_down, source_fpfh, target_fpfh, voxel_size)
     print(result_ransac)
-    draw_registration_result(source_down, target_down, result_ransac.transformation)
+    # draw_registration_result(source_down, target_down, result_ransac.transformation)
 
     result_icp = refine_registration(source, target, source_fpfh, target_fpfh, voxel_size)
     print(result_icp)
-    draw_registration_result(source, target, result_icp.transformation)
+    # draw_registration_result(source, target, result_icp.transformation)
