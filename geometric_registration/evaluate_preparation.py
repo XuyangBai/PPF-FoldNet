@@ -5,12 +5,6 @@ import torch
 from input_preparation import _ppf
 from model import PPFFoldNet
 
-# datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
-# interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
-# savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
-datapath = "/data/3DMatch/test/sun3d-hotel_umd-maryland_hotel3/"
-interpath = "/data/3DMatch/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
-savepath = "/data/3DMatch/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
 
 def get_pcd(filename):
     return open3d.read_point_cloud(os.path.join(datapath, filename + '.ply'))
@@ -76,30 +70,40 @@ def prepare_ppf_input():
         pcd = get_pcd(filename)
         keypts = get_keypts_desc(filename)
         local_patches = build_ppf_input(pcd, keypts)  # [num_keypts, 1024, 4]
-        np.save(savepath + filename + ".ppf.bin", local_patches.astype(np.float32))
+        np.save(ppfpath + filename + ".ppf.bin", local_patches.astype(np.float32))
         print("save", filename + '.ppf.bin')
 
 
-def generate_descriptor(model):
+def generate_descriptor(model, desc_name):
     model.eval()
-    for j in range(37):
-        filename = 'cloud_bin_' + str(j) + ".ppf.bin.npy"
-        local_patches = np.load(savepath + filename)
+    num_frag = len(os.listdir(datapath))
+    for j in range(num_frag):
+        filename = 'cloud_bin_' + str(j) + f".{desc_name}.bin.npy"
+        local_patches = np.load(ppfpath + filename)
         input_ = torch.tensor(local_patches)
         input_ = input_.cuda()
         model = model.cuda()
         # cuda out of memry
         desc_list = []
         for i in range(100):
-            desc = model.encoder(input_[i*50:(i+1)*50, :, :])
+            desc = model.encoder(input_[i * 50:(i + 1) * 50, :, :])
             desc_list.append(desc.detach().cpu().numpy())
             del desc
         desc = np.concatenate(desc_list, 0).reshape([5000, 512])
-        np.save(savepath + 'cloud_bin_' + str(j) + ".desc.ppf.bin", desc.astype(np.float32))
-        print('cloud_bin_' + str(j) + ".desc.ppf.bin")
+        np.save(ppfdescpath + '/cloud_bin_' + str(j) + ".desc.ppf2.bin", desc.astype(np.float32))
+        print('cloud_bin_' + str(j) + ".desc.ppf2.bin")
+
 
 if __name__ == '__main__':
+    # datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
+    # interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+    # savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+    datapath = "/data/3DMatch/fragments/sun3d-hotel_umd-maryland_hotel3/"
+    interpath = "/data/3DMatch/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+    keypointpath = os.path.join(interpath, "keypoints/")
+    ppfpath = os.path.join(interpath, "ppf/")
+    ppfdescpath = os.path.join(interpath, "ppf_desc/")
     model = PPFFoldNet(1024)
     # prepare_ppf_input()
     model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04100054/models/sun3d_best.pkl'))
-    generate_descriptor(model)
+    generate_descriptor(model, desc_name='ppf2')
