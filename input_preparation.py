@@ -11,7 +11,8 @@ def rgbd_to_point_cloud(data_dir, ind, show=False):
     rgbd_image = open3d.create_rgbd_image_from_color_and_depth(color_raw, depth_raw, depth_trunc=10)
     # print(rgbd_image)
     intrinstic = open3d.camera.PinholeCameraIntrinsic()
-    prev_dir = data_dir.replace("/seq-01","")
+    pull_path = os.path.join(data_dir, ind + ".color.png")
+    prev_dir = pull_path[0: pull_path.find("seq-01")]
     with open(os.path.join(prev_dir, "camera-intrinsics.txt")) as f:
         content = f.readlines()
     fx = float(content[0].split("\t")[0]) / 1
@@ -124,7 +125,7 @@ def input_preprocess(data_dir, id, save_dir):
     # save the local_patch and reference point cloud for one point cloud fragment.
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-    np.save(f'{save_dir}/{id}.npy', local_patch)
+    np.save(f'{save_dir}/{id}.npy', local_patch.astype(np.float32))
     open3d.write_point_cloud(f"{save_dir}/{id}.pcd", ref_pcd)
 
 
@@ -141,12 +142,13 @@ def get_local_patches_on_the_fly(data_dir, ind, num_patches, num_points_per_patc
 
 
 if __name__ == "__main__":
-    # data_dir = "./data/train/sun3d-hotel_umd-maryland_hotel3/seq-01"
-    with open("/data/3DMatch/whole/scene_list_train.txt") as f:
+    # with open("./data/3DMatch/whole/scene_list_train.txt") as f:
+    with open("./data/3dMatch/scene_list_train.txt") as f:
         scene_list = f.readlines()
     for scene in scene_list:
         scene = scene.replace("\n", "")
-        data_dir = f"/data/3DMatch/whole/{scene}/seq-01"
+        # data_dir = f"/data/3DMatch/whole/{scene}/seq-01"
+        data_dir = f"./data/3DMatch/{scene}/seq-01"
         start_time = time.time()
         for filename in os.listdir(data_dir):
             if filename.__contains__('color'):
@@ -156,4 +158,3 @@ if __name__ == "__main__":
                 print(id)
         print(f"Finish {scene}, time: {time.time() - start_time}")
         break
-

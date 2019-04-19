@@ -67,31 +67,31 @@ class SunDataset(data.Dataset):
 
 
 if __name__ == '__main__':
-    # datapath = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train"
-    # d = SunDataset(root=datapath, split='train', on_the_fly=True)
-    # print(d.ids_list)
-    # start_time = time.time()
-    # for i in range(10):
-    #     patches, id = d[0]
-    # print(f"On the fly: {time.time() - start_time}")
-    #
-    # datapath = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed"
-    # d = SunDataset(root=datapath, split='train', on_the_fly=False)
-    # print(d.ids_list)
-    # start_time = time.time()
-    # for i in range(10):
-    #     patches, id = d[0]
-    # print(f"Not On the fly: {time.time() - start_time}")
-
-    datapath = "/data/3DMatch/whole/"
+    datapath = "./data/3DMatch/"
     d = SunDataset(root=datapath, split='train', on_the_fly=True)
-    print("Training set size:", len(d.ids_list))
-    for i in range(13900, 140900):
-        p, ind = d[i]
-        print(ind)
+    print(d.ids_list)
+    start_time = time.time()
+    for i in range(10):
+        patches, id = d[0]
+    print(f"On the fly: {time.time() - start_time}")
 
-    d = SunDataset(root=datapath, split='test', on_the_fly=True)
-    print("Test set size:", len(d.ids_list))
-    patches, id = d[0]
-    print(patches.shape)
-    print(id)
+    datapath = "./data/3DMatch/"
+    d = SunDataset(root=datapath, split='train', on_the_fly=False)
+    print(d.ids_list)
+    start_time = time.time()
+    for i in range(10):
+        patches, id = d[0]
+    print(f"Not On the fly: {time.time() - start_time}")
+
+    # datapath = "/data/3DMatch/whole/"
+    # d = SunDataset(root=datapath, split='train', on_the_fly=True)
+    # print("Training set size:", len(d.ids_list))
+    # for i in range(13900, 140900):
+    #     p, ind = d[i]
+    #     print(ind)
+    #
+    # d = SunDataset(root=datapath, split='test', on_the_fly=True)
+    # print("Test set size:", len(d.ids_list))
+    # patches, id = d[0]
+    # print(patches.shape)
+    # print(id)

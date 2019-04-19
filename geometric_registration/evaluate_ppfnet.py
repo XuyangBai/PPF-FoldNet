@@ -1,45 +1,51 @@
 import open3d
 import numpy as np
 import time
+import os
 from dataloader import get_dataloader
+from geometric_registration.utils import get_pcd, get_keypts, get_desc
 from input_preparation import rgbd_to_point_cloud
 from scipy.spatial import KDTree
 
 
-def calculate_M(source, target):
-    # shape of source and target: [2048, 512]
-    res = {}
-    for fea1, i in zip(source, range(len(source))):
-        kdtree_s = KDTree(target)
-        dis, idx1 = kdtree_s.query(fea1, 1)
-        fea2 = target[idx1]
-        kdtree_t = KDTree(source)
-        dis, idx2 = kdtree_t.query(fea2, 1)
-        if i == idx2:
-            res[i] = idx1
-    return res
-    # for fea1, i in zip(source, range(len(source))):
-    #     kdtree_s = open3d.geometry.KDTreeFlann(target)
-    #     _, idx1, _ = kdtree_s.search_knn_vector_xd(fea1, 1)
-    #     fea2 = target[idx1]
-    #
-    #     kdtree_t = open3d.geometry.KDTreeFlann(source)
-    #     _, idx2, _ = kdtree_t.search_knn_vector_xd(fea2, 1)
+def calculate_M(source_desc, target_desc):
+    """
+    Find the mutually closest point pairs in feature space.
+    source and target are descriptor for 2 point cloud key points. [5000, 512]
+    """
+    # start_time = time.time()
+    # result = []
+    # for fea1, i in zip(source_desc, range(len(source_desc))):
+    #     kdtree_s = KDTree(target_desc)
+    #     dis, idx1 = kdtree_s.query(fea1, 1)
+    #     fea2 = target_desc[idx1]
+    #     kdtree_t = KDTree(source_desc)
+    #     dis, idx2 = kdtree_t.query(fea2, 1)
     #     if i == idx2:
-    #         res[i] = idx1
-    # return res
+    #         result.append([i, idx1])
+    # print(time.time() - start_time)
+    # return np.array(result)
+
+    kdtree_s = KDTree(target_desc)
+    sourceNNdis, sourceNNidx = kdtree_s.query(source_desc, 1)
+    kdtree_t = KDTree(source_desc)
+    targetNNdis, targetNNidx = kdtree_t.query(target_desc, 1)
+    result = []
+    for i in range(len(sourceNNidx)):
+        if targetNNidx[sourceNNidx[i]] == i:
+            result.append([i, sourceNNidx[i]])
+    return np.array(result)
 
 
-def distance(p1, p2):
-    return np.sqrt(np.dot(p1 - p2, p1 - p2))
+def calculate_M_gnd(correspondence, source, target, tao1):
+    def distance(p1, p2):
+        return np.sqrt(np.dot(p1 - p2, p1 - p2))
 
-
-def calculate_M_gnd(matching, P, Q, tao1):
-    res = {}
-    for i, j in matching.items():
-        if distance(P[i], Q[j]) <= tao1:
-            res[i] = j
-    return res
+    result = []
+    for pair in correspondence:
+        if distance(source[pair[0]], target[pair[1]]) <= tao1:
+            result.append([pair[0], pair[1]])
+    return np.array(result)
 
 
 def is_matching_pairs(source, target, threshold=0.02):
@@ -79,24 +85,50 @@ def evaluate(model, loader, tao1=0.3, tao2=0.05):
 
 
 if __name__ == '__main__':
-    # data_dir = "data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train"
-    # pcd1 = rgbd_to_point_cloud(data_dir, '000002')
-    # pcd2 = rgbd_to_point_cloud(data_dir, '000003')
-    # print(is_matching_pairs(pcd1, pcd2))
-    # res = calculate_M(np.asarray(pcd1.points)[0:20], np.asarray(pcd2.points)[0:20])
-    # print(res)
+    scene_list = [
+        # '7-scenes-redkitchen',
+        # 'sun3d-home_at-home_at_scan1_2013_jan_1',
+        # 'sun3d-home_md-home_md_scan9_2012_sep_30',
+        # 'sun3d-hotel_uc-scan3',
+        # 'sun3d-hotel_umd-maryland_hotel1',
+        'sun3d-hotel_umd-maryland_hotel3',
+        # 'sun3d-mit_76_studyroom-76-1studyroom2',
+        # 'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
+    ]
+    # datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
+    # interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+    # savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+    for scene in scene_list:
+        pcdpath = f"./fragments/{scene}/"
+        interpath = f"./intermediate-files-real/{scene}/"
+        keyptspath = os.path.join(interpath, "keypoints/")
+        descpath = os.path.join(interpath, "ppf_desc/")
 
-    dataroot = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/"
-    testloader = get_dataloader(dataroot, batch_size=2)
-    for iter, (patches, ids) in enumerate(testloader):
-        # TODO: 现在是同一个scene下的两个不同的fragments, 因为sample是随机的没有判成是True
-        print(ids)
-        pcd1 = open3d.read_point_cloud(dataroot + ids[0] + ".pcd")
-        pcd2 = open3d.read_point_cloud(dataroot + ids[1] + ".pcd")
-        # TODO: 这个threshold应该设多少？
-        is_matching_pairs(pcd1, pcd2, threshold=0.15)
-        stime = time.time()
-        res = calculate_M(patches[0].reshape([-1, 512]), patches[1].reshape([-1, 512]))
-        print("time:", time.time() - stime)
-        print(len(res))
-        break
+        cloud_bin_s = f'cloud_bin_1'
+        cloud_bin_t = f'cloud_bin_2'
+        # 1. load point cloud, keypoints, descriptors
+        original_source_pc = get_pcd(pcdpath, cloud_bin_s)
+        original_target_pc = get_pcd(pcdpath, cloud_bin_t)
+        print("original source:", original_source_pc)
+        print("original target:", original_target_pc)
+        # downsample and estimate the normals
+        voxel_size = 0.02
+        source_pc = open3d.geometry.voxel_down_sample(original_source_pc, voxel_size)
+        open3d.geometry.estimate_normals(source_pc, open3d.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
+        target_pc = open3d.geometry.voxel_down_sample(original_target_pc, voxel_size)
+        open3d.geometry.estimate_normals(target_pc, open3d.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
+        print("downsampled source:", source_pc)
+        print("downsampled target:", target_pc)
+        # load keypoints and descriptors
+        source_keypts = get_keypts(keyptspath, cloud_bin_s)
+        target_keypts = get_keypts(keyptspath, cloud_bin_t)
+        # print(source_keypts.shape)
+        source_desc = get_desc(descpath, cloud_bin_s, desc_name='ppf')
+        target_desc = get_desc(descpath, cloud_bin_t, desc_name='ppf')
+        # trans = ransac_based_on_correspondence(source_keypts[0:1000], target_keypts[0:1000], source_desc[0:1000], target_desc[0:1000])
+
+        corr = calculate_M(source_desc[0:500], target_desc[0:500])
+        # M = len(corr)
+        # # TODO: 需要先用ground truth的transformation对source进行变换
+        # corr_gnd = calculate_M_gnd(corr, source_keypts[0:500], target_keypts[0:500], 0.3)
+        # M_gnd = len(corr_gnd)
