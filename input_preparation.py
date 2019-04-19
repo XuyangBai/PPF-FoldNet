@@ -11,7 +11,14 @@ def rgbd_to_point_cloud(data_dir, ind, show=False):
     rgbd_image = open3d.create_rgbd_image_from_color_and_depth(color_raw, depth_raw, depth_trunc=10)
     # print(rgbd_image)
     intrinstic = open3d.camera.PinholeCameraIntrinsic()
-    intrinstic.set_intrinsics(640, 480, 5.70342205e+02, 5.70342205e+02, 3.20000000e+02, 2.40000000e+02)
+    prev_dir = data_dir.replace("/seq-01","")
+    with open(os.path.join(prev_dir, "camera-intrinsics.txt")) as f:
+        content = f.readlines()
+    fx = float(content[0].split("\t")[0]) / 1
+    fy = float(content[1].split("\t")[1]) / 1
+    cx = float(content[0].split("\t")[2]) / 1
+    cy = float(content[1].split("\t")[2]) / 1
+    intrinstic.set_intrinsics(640, 480, fx, fy, cx, cy)
     matrix = np.loadtxt(f"{data_dir}/{ind}.pose.txt")
     pcd = open3d.create_point_cloud_from_rgbd_image(rgbd_image, intrinstic, extrinsic=matrix)
     if show:
@@ -135,24 +142,18 @@ def get_local_patches_on_the_fly(data_dir, ind, num_patches, num_points_per_patc
 
 if __name__ == "__main__":
     # data_dir = "./data/train/sun3d-hotel_umd-maryland_hotel3/seq-01"
-    data_dir = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01"
-    # i = 0
-    # start_time = time.time()
-    # for filename in os.listdir(data_dir):
-    #     if filename.__contains__('color'):
-    #         id = filename.split(".")[0]
-    #         input_preprocess(data_dir, id, data_dir + '-processed')
-    #         print("Finish", id)
-    #         i = i + 1
-    #     if i == 10:
-    #         print(time.time() - start_time)
-    i = 0
-    start_time = time.time()
-    for filename in os.listdir(data_dir):
-        if filename.__contains__('color'):
-            id = filename.split(".")[0]
-            get_local_patches_on_the_fly(data_dir, id, 32, 1024)
-            print("Finish", id)
-            i = i + 1
-        if i == 10:
-            print(time.time() - start_time)
+    with open("/data/3DMatch/whole/scene_list_train.txt") as f:
+        scene_list = f.readlines()
+    for scene in scene_list:
+        scene = scene.replace("\n", "")
+        data_dir = f"/data/3DMatch/whole/{scene}/seq-01"
+        start_time = time.time()
+        for filename in os.listdir(data_dir):
+            if filename.__contains__('color'):
+                id = filename.split(".")[0]
+                input_preprocess(data_dir, id, data_dir + '-preprocessed/')
+                # get_local_patches_on_the_fly(data_dir, id, 32, 1024)
+                print(id)
+        print(f"Finish {scene}, time: {time.time() - start_time}")
+        break
+
