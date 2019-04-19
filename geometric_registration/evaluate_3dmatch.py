@@ -157,8 +157,8 @@ def register2Fragments(id1, id2, pcdpath, keyptspath, ppfdescpath):
     target_desc = get_desc(ppfdescpath, cloud_bin_t)
 
     # 2. ransac
-    ransac_result = ransac_based_on_correspondence(source_keypts, target_keypts, source_desc, target_desc)
-    # ransac_result = ransac_based_on_feature_matching(source_keypts, target_keypts, source_desc, target_desc)
+    # ransac_result = ransac_based_on_correspondence(source_keypts, target_keypts, source_desc, target_desc)
+    ransac_result = ransac_based_on_feature_matching(source_keypts, target_keypts, source_desc, target_desc)
     print("RANSAC Correspondence_set:", len(ransac_result.correspondence_set))
 
     # 3. refine with ICP
@@ -192,13 +192,15 @@ if __name__ == '__main__':
     # interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
     # savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
     for scene in scene_list:
-        pcdpath = f"./fragments/{scene}/"
-        interpath = f"./intermediate-files-real/{scene}/"
+        pcdpath = f"/data/3DMatch/fragments/{scene}/"
+        interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
         keyptspath = os.path.join(interpath, "keypoints/")
-        ppfdescpath = os.path.join(interpath, "3dmatch_desc/")
-
-        register2Fragments(0, 1, pcdpath, keyptspath, ppfdescpath)
-        break
+        ppfdescpath = os.path.join(interpath, "ppf_desc/")
+        
+        for i in range(10): 
+            for j in range(i + 1,  10):
+                print(f"register cloud {i} and cloud {j}")
+                register2Fragments(1, 10, pcdpath, keyptspath, ppfdescpath)
         # print(source_desc.shape)
 
         # trans = ransac_based_on_correspondence(source_keypts[0:1000], target_keypts[0:1000], source_desc[0:1000], target_desc[0:1000])

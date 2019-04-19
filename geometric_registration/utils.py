@@ -15,10 +15,12 @@ def get_keypts(keyptspath, filename):
 
 
 def get_desc(descpath, filename):
-    desc = np.fromfile(os.path.join(descpath, filename + '.desc.3dmatch.bin'), dtype=np.float32)
-    num_desc = int(desc[0])
-    desc_size = int(desc[1])
-    desc = desc[2:].reshape([num_desc, desc_size])
+    #desc = np.fromfile(os.path.join(descpath, filename + '.desc.3dmatch.bin'), dtype=np.float32)
+    #num_desc = int(desc[0])
+    #desc_size = int(desc[1])
+    #desc = desc[2:].reshape([num_desc, desc_size])
+    #return desc
+    desc = np.load(os.path.join(descpath, filename + '.desc.ppf.bin.npy'))
     return desc
     # if filename.__contains__('ppf'):
     #     desc = np.load(filename)

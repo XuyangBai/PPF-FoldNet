@@ -30,6 +30,7 @@ class SunDataset(data.Dataset):
 
         self.ids_list = []
         for scene in scene_list:
+            scene = scene.replace("\n","")
             ids = [scene + "/seq-01/" + str(filename.split(".")[0]) for filename in os.listdir(os.path.join(self.root, scene + '/seq-01/'))]
             self.ids_list += sorted(list(set(ids)))
 
@@ -43,7 +44,11 @@ class SunDataset(data.Dataset):
     def __getitem__(self, index):
         id = self.ids_list[index]
         if self.on_the_fly:
-            return get_local_patches_on_the_fly(self.root, id, self.num_patches, self.num_points_per_patch), id
+            try:
+                return get_local_patches_on_the_fly(self.root, id, self.num_patches, self.num_points_per_patch), id
+            except:
+                print(index, "cannot open")
+                return self.__getitem__(index + 1)
 
         ind = np.random.choice(range(2048), self.num_patches, replace=False)
         patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
@@ -78,9 +83,15 @@ if __name__ == '__main__':
     #     patches, id = d[0]
     # print(f"Not On the fly: {time.time() - start_time}")
 
-    datapath = "./data/train/"
+    datapath = "/data/3DMatch/whole/"
     d = SunDataset(root=datapath, split='train', on_the_fly=True)
-    print(d.ids_list)
+    print("Training set size:", len(d.ids_list))
+    for i in range(13900, 140900):
+        p, ind = d[i]
+        print(ind)
+
+    d = SunDataset(root=datapath, split='test', on_the_fly=True)
+    print("Test set size:", len(d.ids_list))
     patches, id = d[0]
     print(patches.shape)
     print(id)
