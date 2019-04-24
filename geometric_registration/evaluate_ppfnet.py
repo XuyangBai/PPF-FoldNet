@@ -2,9 +2,7 @@ import open3d
 import numpy as np
 import time
 import os
-from dataloader import get_dataloader
-from geometric_registration.utils import get_pcd, get_keypts, get_desc
-from input_preparation import rgbd_to_point_cloud
+from geometric_registration.utils import get_pcd, get_keypts, get_desc, loadlog
 from scipy.spatial import KDTree
 
 
@@ -13,18 +11,6 @@ def calculate_M(source_desc, target_desc):
     Find the mutually closest point pairs in feature space.
     source and target are descriptor for 2 point cloud key points. [5000, 512]
     """
-    # start_time = time.time()
-    # result = []
-    # for fea1, i in zip(source_desc, range(len(source_desc))):
-    #     kdtree_s = KDTree(target_desc)
-    #     dis, idx1 = kdtree_s.query(fea1, 1)
-    #     fea2 = target_desc[idx1]
-    #     kdtree_t = KDTree(source_desc)
-    #     dis, idx2 = kdtree_t.query(fea2, 1)
-    #     if i == idx2:
-    #         result.append([i, idx1])
-    # print(time.time() - start_time)
-    # return np.array(result)
 
     kdtree_s = KDTree(target_desc)
     sourceNNdis, sourceNNidx = kdtree_s.query(source_desc, 1)
@@ -37,51 +23,72 @@ def calculate_M(source_desc, target_desc):
     return np.array(result)
 
 
-def calculate_M_gnd(correspondence, source, target, tao1):
-    def distance(p1, p2):
-        return np.sqrt(np.dot(p1 - p2, p1 - p2))
+# def calculate_M_gnd(correspondence, source, target, tao1):
+#     def distance(p1, p2):
+#         return np.sqrt(np.dot(p1 - p2, p1 - p2))
+#
+#     result = []
+#     for pair in correspondence:
+#         if distance(source[pair[0]], target[pair[1]]) <= tao1:
+#             result.append([pair[0], pair[1]])
+#     return np.array(result)
+#
+#
+# def is_matching_pairs(source, target, threshold=0.02):
+#     trans_init = np.asarray(
+#         [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+#     )
+#     evaluation = open3d.evaluate_registration(source, target, threshold, trans_init)
+#     print(evaluation.fitness)
+#     if evaluation.fitness >= 0.3:
+#         return True
+#     else:
+#         return False
 
-    result = []
-    for pair in correspondence:
-        if distance(source[pair[0]], target[pair[1]]) <= tao1:
-            result.append([pair[0], pair[1]])
-    return np.array(result)
 
+def register2Fragments(id1, id2, pcdpath, keyptspath, descpath, desc_name='ppf'):
+    cloud_bin_s = f'cloud_bin_{id1}'
+    cloud_bin_t = f'cloud_bin_{id2}'
+    # load keypoints and descriptors
+    source_keypts = get_keypts(keyptspath, cloud_bin_s)
+    target_keypts = get_keypts(keyptspath, cloud_bin_t)
+    # print(source_keypts.shape)
+    source_desc = get_desc(descpath, cloud_bin_s, desc_name=desc_name)
+    target_desc = get_desc(descpath, cloud_bin_t, desc_name=desc_name)
 
-def is_matching_pairs(source, target, threshold=0.02):
-    trans_init = np.asarray(
-        [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
-    )
-    evaluation = open3d.evaluate_registration(source, target, threshold, trans_init)
-    print(evaluation.fitness)
-    if evaluation.fitness >= 0.3:
-        return True
+    # find mutually cloest point
+    corr = calculate_M(source_desc, target_desc)
+    print(len(corr))
+
+    key = f'{cloud_bin_s.split("_")[-1]}_{cloud_bin_t.split("_")[-1]}'
+    if key not in gtLog.keys():
+        num_inliers = 0
+        inlier_ratio = 0
+        gt_flag = 0
     else:
-        return False
+        gtTrans = gtLog[key]
+        frag1 = source_keypts[corr[:, 0]]
+        frag2_pc = open3d.PointCloud()
+        frag2_pc.points = open3d.utility.Vector3dVector(target_keypts[corr[:, 1]])
+        frag2_pc.transform(gtTrans)
+        frag2 = np.asarray(frag2_pc.points)
+        distance = np.sqrt(np.sum(np.power(frag1 - frag2, 2), axis=1))
+        num_inliers = np.sum(distance < 0.1)
+        inlier_ratio = num_inliers / len(distance)
+        gt_flag = 1
+    s = f"{cloud_bin_s}\t{cloud_bin_t}\t{num_inliers}\t{inlier_ratio:.8f}\t{gt_flag}"
+    with open(os.path.join(resultpath, f'{cloud_bin_s}_{cloud_bin_t}.rt.txt'), 'w+') as f:
+        f.write(s)
+    return num_inliers, inlier_ratio, gt_flag
 
 
-def evaluate(model, loader, tao1=0.3, tao2=0.05):
-    # model.eval()
-    total_matching_fragments = 0
-    pred_matching_fragments = 0
-    for iter, inputs in enumerate(loader):
-        # assume P and Q have already been transformed to the canonical coordinate.
-        P = inputs[0]
-        Q = inputs[1]
-        if not is_matching_pairs(P, Q):
-            continue
-        else:
-            total_matching_fragments += 1
-        g_P = model.encoder(P)
-        g_Q = model.encoder(Q)
-        g_P = P
-        g_Q = Q
-        matching_points = calculate_M(g_P, g_Q)
-        gt_matching_points = calculate_M_gnd(matching_points, P, Q, tao1)
-        if len(gt_matching_points) * 1.0 / len(matching_points) > tao2:
-            pred_matching_fragments += 1
-    recall = pred_matching_fragments * 1.0 / total_matching_fragments
-    print(f"Recall with tao1 = {tao1*100}cm and tao2 = {tao2} is: {recall}")
+def read_register_result(id1, id2):
+    cloud_bin_s = f'cloud_bin_{id1}'
+    cloud_bin_t = f'cloud_bin_{id2}'
+    with open(os.path.join(resultpath, f'{cloud_bin_s}_{cloud_bin_t}.rt.txt'), 'r') as f:
+        content = f.readlines()
+    nums = content[0].replace("\n", "").split("\t")[2:5]
+    return nums
 
 
 if __name__ == '__main__':
@@ -95,40 +102,38 @@ if __name__ == '__main__':
         # 'sun3d-mit_76_studyroom-76-1studyroom2',
         # 'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
     ]
-    # datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
-    # interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
-    # savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
     for scene in scene_list:
-        pcdpath = f"./fragments/{scene}/"
-        interpath = f"./intermediate-files-real/{scene}/"
+        pcdpath = f"/data/3DMatch/fragments/{scene}/"
+        interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
+        gtpath = f'/data/3DMatch/result/{scene}-evaluation/'
         keyptspath = os.path.join(interpath, "keypoints/")
         descpath = os.path.join(interpath, "ppf_desc/")
+        gtLog = loadlog(gtpath)
+        resultpath = os.path.join(interpath, "ppf_desc_result/")
+        if not os.path.exists(resultpath):
+            os.mkdir(resultpath)
 
-        cloud_bin_s = f'cloud_bin_1'
-        cloud_bin_t = f'cloud_bin_2'
-        # 1. load point cloud, keypoints, descriptors
-        original_source_pc = get_pcd(pcdpath, cloud_bin_s)
-        original_target_pc = get_pcd(pcdpath, cloud_bin_t)
-        print("original source:", original_source_pc)
-        print("original target:", original_target_pc)
-        # downsample and estimate the normals
-        voxel_size = 0.02
-        source_pc = open3d.geometry.voxel_down_sample(original_source_pc, voxel_size)
-        open3d.geometry.estimate_normals(source_pc, open3d.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
-        target_pc = open3d.geometry.voxel_down_sample(original_target_pc, voxel_size)
-        open3d.geometry.estimate_normals(target_pc, open3d.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
-        print("downsampled source:", source_pc)
-        print("downsampled target:", target_pc)
-        # load keypoints and descriptors
-        source_keypts = get_keypts(keyptspath, cloud_bin_s)
-        target_keypts = get_keypts(keyptspath, cloud_bin_t)
-        # print(source_keypts.shape)
-        source_desc = get_desc(descpath, cloud_bin_s, desc_name='ppf')
-        target_desc = get_desc(descpath, cloud_bin_t, desc_name='ppf')
-        # trans = ransac_based_on_correspondence(source_keypts[0:1000], target_keypts[0:1000], source_desc[0:1000], target_desc[0:1000])
+        # register each pair
+        desc_name = 'ppf'
+        num_frag = len(os.listdir(pcdpath))
+        print(f"Start Evaluate Descriptor {desc_name} for {scene}")
+        start_time = time.time()
+        for id1 in range(num_frag):
+            for id2 in range(id1 + 1, num_frag):
+                num_inliers, inlier_ratio, gt_flag = register2Fragments(id1, id2, pcdpath, keyptspath, descpath, desc_name)
+        print(f"Finish Evaluation, time: {time.time() - start_time:.2f}s")
 
-        corr = calculate_M(source_desc[0:500], target_desc[0:500])
-        # M = len(corr)
-        # # TODO: 需要先用ground truth的transformation对source进行变换
-        # corr_gnd = calculate_M_gnd(corr, source_keypts[0:500], target_keypts[0:500], 0.3)
-        # M_gnd = len(corr_gnd)
+        # evaluate
+        result = []
+        for id1 in range(num_frag):
+            for id2 in range(id1 + 1, num_frag):
+                line = read_register_result(id1, id2)
+                result.append([int(line[0]), float(line[1]), int(line[2])])
+        print(result)
+        result = np.array(result)
+        indices_results = np.sum(result[:,2] == 1)
+        correct_match = np.sum(result[:,1] > 0.05)
+        recall = float(correct_match / indices_results) * 100
+        print(f"Correct Match {correct_match}, ground truth Match {indices_results}")
+        print(f"Recall {recall}%")
+

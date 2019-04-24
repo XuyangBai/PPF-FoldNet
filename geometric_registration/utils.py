@@ -26,3 +26,28 @@ def get_desc(descpath, filename, desc_name):
         print("No such descriptor")
         exit(-1)
     return desc
+
+
+def loadlog(gtpath):
+    with open(os.path.join(gtpath, 'gt.log')) as f:
+        content = f.readlines()
+    result = {}
+    i = 0
+    while i < len(content):
+        line = content[i].replace("\n", "").split("\t")[0:3]
+        trans = np.zeros([4, 4])
+        trans[0] = [float(x) for x in content[i + 1].replace("\n", "").split("\t")[0:4]]
+        trans[1] = [float(x) for x in content[i + 2].replace("\n", "").split("\t")[0:4]]
+        trans[2] = [float(x) for x in content[i + 3].replace("\n", "").split("\t")[0:4]]
+        trans[3] = [float(x) for x in content[i + 4].replace("\n", "").split("\t")[0:4]]
+        i = i + 5
+        result[f'{int(line[0])}_{int(line[1])}'] = trans
+
+    return result
+
+
+if __name__ == '__main__':
+    gtpath = './result/'
+    gtlog = loadlog(gtpath)
+    print(gtlog.keys())
+    print(gtlog['0_1'])
