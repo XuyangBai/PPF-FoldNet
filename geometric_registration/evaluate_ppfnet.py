@@ -61,15 +61,15 @@ def register2Fragments(id1, id2, keyptspath, descpath, resultpath, desc_name='pp
     source_desc = np.nan_to_num(source_desc)
     target_desc = np.nan_to_num(target_desc)
 
-    # find mutually cloest point
-    corr = calculate_M(source_desc, target_desc)
-
     key = f'{cloud_bin_s.split("_")[-1]}_{cloud_bin_t.split("_")[-1]}'
     if key not in gtLog.keys():
         num_inliers = 0
         inlier_ratio = 0
         gt_flag = 0
     else:
+        # find mutually cloest point.
+        corr = calculate_M(source_desc, target_desc)
+
         gtTrans = gtLog[key]
         frag1 = source_keypts[corr[:, 0]]
         frag2_pc = open3d.PointCloud()
@@ -112,9 +112,9 @@ if __name__ == '__main__':
         interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
         gtpath = f'gt_result/{scene}-evaluation/'
         keyptspath = os.path.join(interpath, "keypoints/")
-        descpath = os.path.join(interpath, f"{desc_name}_desc/")
+        descpath = os.path.join(interpath, f"{desc_name}_desc_0410")
         gtLog = loadlog(gtpath)
-        resultpath = os.path.join(".", f"{desc_name}_result/")
+        resultpath = os.path.join(".", f"pred_result/{scene}/{desc_name}_result_0410")
         if not os.path.exists(resultpath):
             os.mkdir(resultpath)
 
@@ -125,6 +125,7 @@ if __name__ == '__main__':
         for id1 in range(num_frag):
             for id2 in range(id1 + 1, num_frag):
                 num_inliers, inlier_ratio, gt_flag = register2Fragments(id1, id2, keyptspath, descpath, resultpath, desc_name)
+                print(f"- finish reigster point cloud{id1} and point cloud{id2}, {time.time() - start_time:.3f}s")
         print(f"Finish Evaluation, time: {time.time() - start_time:.2f}s")
 
         # evaluate
@@ -133,11 +134,12 @@ if __name__ == '__main__':
             for id2 in range(id1 + 1, num_frag):
                 line = read_register_result(id1, id2)
                 result.append([int(line[0]), float(line[1]), int(line[2])])
-        print(result)
         result = np.array(result)
         indices_results = np.sum(result[:,2] == 1)
         correct_match = np.sum(result[:,1] > 0.05)
         recall = float(correct_match / indices_results) * 100
         print(f"Correct Match {correct_match}, ground truth Match {indices_results}")
         print(f"Recall {recall}%")
+        ave_num_inliers = np.sum(np.where(result[:,1]>0.05, result[:,0], np.zeros(result.shape[0]))) / correct_match
+        print(f"Average Num Inliners: {ave_num_inliers}")
 
