@@ -46,15 +46,20 @@ def calculate_M(source_desc, target_desc):
 #         return False
 
 
-def register2Fragments(id1, id2, pcdpath, keyptspath, descpath, desc_name='ppf'):
+def register2Fragments(id1, id2, keyptspath, descpath, resultpath, desc_name='ppf'):
     cloud_bin_s = f'cloud_bin_{id1}'
     cloud_bin_t = f'cloud_bin_{id2}'
-    # load keypoints and descriptors
+    write_file = f'{cloud_bin_s}_{cloud_bin_t}.rt.txt'
+    if os.path.exists(os.path.join(resultpath, write_file)):
+        print(f"{write_file} already exists.")
+        return 0, 0, 0
     source_keypts = get_keypts(keyptspath, cloud_bin_s)
     target_keypts = get_keypts(keyptspath, cloud_bin_t)
     # print(source_keypts.shape)
     source_desc = get_desc(descpath, cloud_bin_s, desc_name=desc_name)
     target_desc = get_desc(descpath, cloud_bin_t, desc_name=desc_name)
+    source_desc = np.nan_to_num(source_desc)
+    target_desc = np.nan_to_num(target_desc)
 
     # find mutually cloest point
     corr = calculate_M(source_desc, target_desc)
@@ -101,7 +106,7 @@ if __name__ == '__main__':
         # 'sun3d-mit_76_studyroom-76-1studyroom2',
         # 'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
     ]
-    desc_name = '3dmatch'
+    desc_name = 'ppf'
     for scene in scene_list:
         pcdpath = f"/data/3DMatch/fragments/{scene}/"
         interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
@@ -119,7 +124,7 @@ if __name__ == '__main__':
         start_time = time.time()
         for id1 in range(num_frag):
             for id2 in range(id1 + 1, num_frag):
-                num_inliers, inlier_ratio, gt_flag = register2Fragments(id1, id2, pcdpath, keyptspath, descpath, desc_name)
+                num_inliers, inlier_ratio, gt_flag = register2Fragments(id1, id2, keyptspath, descpath, resultpath, desc_name)
         print(f"Finish Evaluation, time: {time.time() - start_time:.2f}s")
 
         # evaluate
