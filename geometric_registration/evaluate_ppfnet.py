@@ -3,8 +3,8 @@ import numpy as np
 import time
 import os
 from geometric_registration.utils import get_pcd, get_keypts, get_desc, loadlog
-from scipy.spatial import KDTree
-
+# from scipy.spatial import KDTree
+from sklearn.neighbors import KDTree
 
 def calculate_M(source_desc, target_desc):
     """
@@ -19,7 +19,7 @@ def calculate_M(source_desc, target_desc):
     result = []
     for i in range(len(sourceNNidx)):
         if targetNNidx[sourceNNidx[i]] == i:
-            result.append([i, sourceNNidx[i]])
+            result.append([i, sourceNNidx[i][0]])
     return np.array(result)
 
 
@@ -58,7 +58,6 @@ def register2Fragments(id1, id2, pcdpath, keyptspath, descpath, desc_name='ppf')
 
     # find mutually cloest point
     corr = calculate_M(source_desc, target_desc)
-    print(len(corr))
 
     key = f'{cloud_bin_s.split("_")[-1]}_{cloud_bin_t.split("_")[-1]}'
     if key not in gtLog.keys():
@@ -102,19 +101,19 @@ if __name__ == '__main__':
         # 'sun3d-mit_76_studyroom-76-1studyroom2',
         # 'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
     ]
+    desc_name = '3dmatch'
     for scene in scene_list:
         pcdpath = f"/data/3DMatch/fragments/{scene}/"
         interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
-        gtpath = f'/data/3DMatch/result/{scene}-evaluation/'
+        gtpath = f'gt_result/{scene}-evaluation/'
         keyptspath = os.path.join(interpath, "keypoints/")
-        descpath = os.path.join(interpath, "ppf_desc/")
+        descpath = os.path.join(interpath, f"{desc_name}_desc/")
         gtLog = loadlog(gtpath)
-        resultpath = os.path.join(interpath, "ppf_desc_result/")
+        resultpath = os.path.join(".", f"{desc_name}_result/")
         if not os.path.exists(resultpath):
             os.mkdir(resultpath)
 
         # register each pair
-        desc_name = 'ppf'
         num_frag = len(os.listdir(pcdpath))
         print(f"Start Evaluate Descriptor {desc_name} for {scene}")
         start_time = time.time()
