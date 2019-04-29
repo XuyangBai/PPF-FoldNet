@@ -29,11 +29,18 @@ class SunDataset(data.Dataset):
             scene_list = f.readlines()
 
         self.ids_list = []
+        self.scene_list = []
         for scene in scene_list:
+            if not scene.__contains__('sun3d'):
+                continue
             scene = scene.replace("\n","")
             ids = [scene + "/seq-01/" + str(filename.split(".")[0]) for filename in os.listdir(os.path.join(self.root, scene + '/seq-01/'))]
             self.ids_list += sorted(list(set(ids)))
-
+            self.scene_list.append(scene)
+        if split == 'test':
+            self.ids_list = self.ids_list[0:1000]
+        if split == 'train':
+            self.ids_list = self.ids_list[0:10000]
         # self.ids_list = [filename.split(".")[0] for filename in os.listdir(self.root)]
         # self.ids_list = sorted(list(set(self.ids_list)))
         # if split == 'train':
@@ -67,20 +74,22 @@ class SunDataset(data.Dataset):
 
 
 if __name__ == '__main__':
-    datapath = "./data/3DMatch/"
+    datapath = "/data/3DMatch/whole"
     d = SunDataset(root=datapath, split='train', on_the_fly=True)
-    print(d.ids_list)
-    start_time = time.time()
-    for i in range(10):
-        patches, id = d[0]
-    print(f"On the fly: {time.time() - start_time}")
+    print(len(d.ids_list))
+    print(d.scene_list)
+    #start_time = time.time()
+    #for i in range(100):
+    #    patches, id = d[i]
+    #print(f"On the fly: {time.time() - start_time}")
 
-    datapath = "./data/3DMatch/"
-    d = SunDataset(root=datapath, split='train', on_the_fly=False)
-    print(d.ids_list)
-    start_time = time.time()
-    for i in range(10):
-        patches, id = d[0]
+    datapath = "/data/3DMatch/whole"
+    d = SunDataset(root=datapath, split='test', on_the_fly=True)
+    print(len(d.ids_list))
+    print(d.scene_list)
+    tart_time = time.time()
+    for i in range(1000):
+        patches, id = d[i]
     print(f"Not On the fly: {time.time() - start_time}")
 
     # datapath = "/data/3DMatch/whole/"

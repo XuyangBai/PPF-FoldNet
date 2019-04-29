@@ -24,8 +24,9 @@ class Trainer(object):
         self.scheduler = args.scheduler
         self.scheduler_interval = args.scheduler_interval
         self.snapshot_interval = args.snapshot_interval
+        self.evaluate_interval = args.evaluate_interval
         self.writer = SummaryWriter(log_dir=args.tboard_dir)
-
+        
         self.train_loader = args.train_loader
         self.test_loader = args.test_loader
 
@@ -49,15 +50,18 @@ class Trainer(object):
         for epoch in range(self.epoch):
             self.train_epoch(epoch)
 
-            if (epoch + 1) % 10 == 0 or epoch == 0:
+            if (epoch + 1) % self.evaluate_interval == 0 or epoch == 0:
                 res = self.evaluate(epoch + 1)
                 print(f'Evaluation: Epoch {epoch+1}: Loss {res["loss"]}')
                 if res['loss'] < best_loss:
                     best_loss = res['loss']
                     self._snapshot('best')
-
+             
             if epoch % self.scheduler_interval == 0:
                 self.scheduler.step()
+            
+            if epoch % self.snapshot_interval == 0:
+                self._snapshot(epoch + 1)
 
             if self.writer:
                 self.writer.add_scalar('Learning Rate', self._get_lr(), epoch)
