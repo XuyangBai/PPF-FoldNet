@@ -32,8 +32,6 @@ class Encoder(nn.Module):
     def forward(self, input):
         # origin shape from dataloader [bs*32, 1024(num_points), 4]
         input = input.transpose(-1, -2).float()
-        import pdb
-        pdb.set_trace()
         x = self.relu1(self.bn1(self.conv1(input)))
         local_feature_1 = x  # save the  low level features to concatenate this global feature.
         x = self.relu2(self.bn2(self.conv2(x)))
