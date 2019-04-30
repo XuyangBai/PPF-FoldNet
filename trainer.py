@@ -47,6 +47,8 @@ class Trainer(object):
         start_time = time.time()
 
         self.model.train()
+        res = self.evaluate(0)
+        print(f'Evaluation: Epoch 0: Loss {res["loss"]}')
         for epoch in range(self.epoch):
             self.train_epoch(epoch)
 
@@ -56,6 +58,8 @@ class Trainer(object):
                 if res['loss'] < best_loss:
                     best_loss = res['loss']
                     self._snapshot('best')
+                if self.writer:
+                    self.writer.add_scalar('Loss', res['loss'], epoch)
              
             if epoch % self.scheduler_interval == 0:
                 self.scheduler.step()
@@ -65,7 +69,6 @@ class Trainer(object):
 
             if self.writer:
                 self.writer.add_scalar('Learning Rate', self._get_lr(), epoch)
-                self.writer.add_scalar('Loss', res['loss'], epoch)
                 self.writer.add_scalar('Train Loss', self.train_hist['loss'][-1], epoch)
 
                 # finish all epoch

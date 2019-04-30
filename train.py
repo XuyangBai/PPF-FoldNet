@@ -3,9 +3,9 @@ import time
 import shutil
 from torch import optim
 from trainer import Trainer
-from model import PPFFoldNet
+from models.model import PPFFoldNet
 from dataloader import get_dataloader
-from new_model import PPFFoldNet_new
+from models.new_model import PPFFoldNet_new
 
 
 class Args(object):
@@ -16,7 +16,7 @@ class Args(object):
         os.makedirs(snapshot_root, exist_ok=True)
         os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
-        shutil.copy2(os.path.join('.', 'new_model.py'), os.path.join(snapshot_root, 'model.py'))
+        shutil.copy2(os.path.join('.', 'models/new_model.py'), os.path.join(snapshot_root, 'model.py'))
         self.epoch = 20
         self.num_patches = 64
         self.num_points_per_patch = 1024  # num of points per patches
