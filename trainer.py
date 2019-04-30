@@ -64,7 +64,7 @@ class Trainer(object):
             if epoch % self.scheduler_interval == 0:
                 self.scheduler.step()
             
-            if epoch % self.snapshot_interval == 0:
+            if (epoch + 1) % self.snapshot_interval == 0:
                 self._snapshot(epoch + 1)
 
             if self.writer:

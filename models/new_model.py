@@ -20,12 +20,12 @@ class Encoder(nn.Module):
         self.bn2 = nn.BatchNorm1d(128)
         self.relu2 = nn.ReLU()
 
-        self.conv3 = nn.Conv1d(128, 256, 1)
-        self.bn3 = nn.BatchNorm1d(256)
+        self.conv3 = nn.Conv1d(128, 1024, 1)
+        self.bn3 = nn.BatchNorm1d(1024)
         self.relu3 = nn.ReLU()
 
-        self.fc1 = nn.Linear(704, 512)
-        self.fc2 = nn.Linear(512, 512)  # codeword dimension = 512
+        self.fc1 = nn.Linear(64 + 1024,  1024)
+        self.fc2 = nn.Linear(1024, 512)  # codeword dimension = 512
         # self.bn4 = nn.BatchNorm1d(1024)
         # self.bn5 = nn.BatchNorm1d(512)
 
@@ -42,7 +42,7 @@ class Encoder(nn.Module):
         x = torch.max(x, 2, keepdim=True)[0]
         global_feature = x.repeat([1, 1, self.num_points_per_patches])
         # feature shape: [num_patches, 704, num_points_per_patch]
-        feature = torch.cat([local_feature_1, local_feature_2, local_feature_3, global_feature], 1)
+        feature = torch.cat([local_feature_1, global_feature], 1)
   
         # TODO: add batch_norm or not?
         x = F.relu(self.fc1(feature.transpose(1, 2)))
@@ -67,7 +67,7 @@ class Decoder(nn.Module):
             nn.Linear(64, 32),
             nn.ReLU(),
             nn.Linear(32, 4),
-            nn.ReLU(),
+            # nn.ReLU(),
         )
 
         self.mlp2 = nn.Sequential(
@@ -80,7 +80,7 @@ class Decoder(nn.Module):
             nn.Linear(64, 32),
             nn.ReLU(),
             nn.Linear(32, 4),
-            nn.ReLU(),
+            # nn.ReLU(),
         )
 
     def build_grid(self, batch_size):
