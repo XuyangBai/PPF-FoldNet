@@ -1,3 +1,4 @@
+import sys
 import open3d
 import numpy as np
 import time
@@ -51,7 +52,7 @@ def register2Fragments(id1, id2, keyptspath, descpath, resultpath, desc_name='pp
     cloud_bin_t = f'cloud_bin_{id2}'
     write_file = f'{cloud_bin_s}_{cloud_bin_t}.rt.txt'
     if os.path.exists(os.path.join(resultpath, write_file)):
-        print(f"{write_file} already exists.")
+  #      print(f"{write_file} already exists.")
         return 0, 0, 0
     source_keypts = get_keypts(keyptspath, cloud_bin_s)
     target_keypts = get_keypts(keyptspath, cloud_bin_t)
@@ -97,24 +98,25 @@ def read_register_result(id1, id2):
 
 if __name__ == '__main__':
     scene_list = [
-        # '7-scenes-redkitchen',
-        # 'sun3d-home_at-home_at_scan1_2013_jan_1',
-        # 'sun3d-home_md-home_md_scan9_2012_sep_30',
-        # 'sun3d-hotel_uc-scan3',
-        # 'sun3d-hotel_umd-maryland_hotel1',
-        'sun3d-hotel_umd-maryland_hotel3',
-        # 'sun3d-mit_76_studyroom-76-1studyroom2',
-        # 'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
+       '7-scenes-redkitchen',
+       'sun3d-home_at-home_at_scan1_2013_jan_1',
+       'sun3d-home_md-home_md_scan9_2012_sep_30',
+       'sun3d-hotel_uc-scan3',
+       'sun3d-hotel_umd-maryland_hotel1',
+       'sun3d-hotel_umd-maryland_hotel3',
+       'sun3d-mit_76_studyroom-76-1studyroom2',
+       'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
     ]
     desc_name = 'ppf'
+    timestr = sys.argv[1]
     for scene in scene_list:
         pcdpath = f"/data/3DMatch/fragments/{scene}/"
         interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
         gtpath = f'gt_result/{scene}-evaluation/'
         keyptspath = os.path.join(interpath, "keypoints/")
-        descpath = os.path.join(interpath, f"{desc_name}_desc_0410")
+        descpath = os.path.join(".", f"{desc_name}_desc_{timestr}/{scene}")
         gtLog = loadlog(gtpath)
-        resultpath = os.path.join(".", f"pred_result/{scene}/{desc_name}_result_0410")
+        resultpath = os.path.join(".", f"pred_result/{scene}/{desc_name}_result_{timestr}")
         if not os.path.exists(resultpath):
             os.mkdir(resultpath)
 

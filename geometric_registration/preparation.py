@@ -1,13 +1,13 @@
 import open3d
 import os
+import sys
 import time
 import numpy as np
 import torch
 
 from geometric_registration.utils import get_pcd, get_keypts
 from input_preparation import _ppf
-from new_model import PPFFoldNet_new
-
+from models.new_model import PPFFoldNet_new
 
 def build_ppf_input(pcd, keypts):
     kdtree = open3d.KDTreeFlann(pcd)
@@ -72,8 +72,9 @@ def generate_descriptor(model, desc_name, pcdpath, ppfpath, ppfdescpath):
         model = model.cuda()
         # cuda out of memry
         desc_list = []
-        for i in range(100):
-            desc = model.encoder(input_[i * 50:(i + 1) * 50, :, :])
+        for i in range(200):
+            step_size = int(5000 / 200)
+            desc = model.encoder(input_[i * step_size: (i + 1) * step_size, :, :])
             desc_list.append(desc.detach().cpu().numpy())
             del desc
         desc = np.concatenate(desc_list, 0).reshape([5000, 512])
@@ -82,26 +83,31 @@ def generate_descriptor(model, desc_name, pcdpath, ppfpath, ppfdescpath):
 
 if __name__ == '__main__':
     scene_list = [
-        '7-scenes-redkitchen',
-        'sun3d-home_at-home_at_scan1_2013_jan_1',
-        'sun3d-home_md-home_md_scan9_2012_sep_30',
-        'sun3d-hotel_uc-scan3',
-        'sun3d-hotel_umd-maryland_hotel1',
-        'sun3d-hotel_umd-maryland_hotel3',
-        'sun3d-mit_76_studyroom-76-1studyroom2',
-        'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
+       '7-scenes-redkitchen',
+       'sun3d-home_at-home_at_scan1_2013_jan_1',
+       'sun3d-home_md-home_md_scan9_2012_sep_30',
+       'sun3d-hotel_uc-scan3',
+       'sun3d-hotel_umd-maryland_hotel1',
+       'sun3d-hotel_umd-maryland_hotel3',
+       'sun3d-mit_76_studyroom-76-1studyroom2',
+       'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
     ]
     # datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
     # interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
     # savepath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
+    model_str = sys.argv[1]
+    if not os.path.exists(f"ppf_desc_{model_str}/"):
+        os.mkdir(f"ppf_desc_{model_str}")
+    model = PPFFoldNet_new(10, 1024)
+    model.load_state_dict(torch.load(f'/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet{model_str}/models/sun3d_best.pkl'))
     for scene in scene_list:
         pcdpath = f"/data/3DMatch/fragments/{scene}/"
         interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
         keyptspath = os.path.join(interpath, "keypoints/")
         ppfpath = os.path.join(interpath, "ppf/")
-        ppfdescpath = os.path.join(interpath, "ppf_desc/")
-        model = PPFFoldNet_new(100, 1024)
-        model.load_state_dict(torch.load('/home/xybai/PPF-FoldNet/snapshot/PPF-FoldNet04170839/models/sun3d_best.pkl'))
+        ppfdescpath = os.path.join('.',f"ppf_desc_{model_str}/{scene}/")
+        if not os.path.exists(ppfdescpath):
+            os.mkdir(ppfdescpath)
         start_time = time.time()
         print(f"Begin prepare ppf input for {scene}")
         prepare_ppf_input(pcdpath=pcdpath, ppfpath=ppfpath, keyptspath=keyptspath)
