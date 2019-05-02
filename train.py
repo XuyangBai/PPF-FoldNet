@@ -3,9 +3,9 @@ import time
 import shutil
 from torch import optim
 from trainer import Trainer
-from models.model import PPFFoldNet
+from models.model_conv1d import PPFFoldNet
 from dataloader import get_dataloader
-from models.new_model import PPFFoldNet_new
+from models.model_conv1d import PPFFoldNet
 
 
 class Args(object):
@@ -34,7 +34,7 @@ class Args(object):
         self.verbose = True
 
         # model & optimizer
-        self.model = PPFFoldNet_new(self.num_patches, self.num_points_per_patch)
+        self.model = PPFFoldNet(self.num_patches, self.num_points_per_patch)
         self.pretrain = ''
         self.parameter = self.model.get_parameter()
         self.optimizer = optim.Adam(self.parameter, lr=0.001, betas=(0.9, 0.999), weight_decay=1e-6)

@@ -108,15 +108,15 @@ class Decoder(nn.Module):
         return after_folding2.transpose(1, 2)  # [bs, m, 4]
 
 
-class PPFFoldNet_new(nn.Module):
+class PPFFoldNet(nn.Module):
     """
-    This model is similar with PPFFoldNet defined in model.py, the difference is:
-        1. I use Linear layer to replace Conv1d because the test shows that Linear is faster.
-        2. Different skip connection scheme.
+    1. skip connection scheme.
+    2. use linear / conv1d.
+    3. whether to use relu in last layer.
     """
 
     def __init__(self, num_patches=32, num_points_per_patch=1024):
-        super(PPFFoldNet_new, self).__init__()
+        super(PPFFoldNet, self).__init__()
         self.encoder = Encoder(num_patches=num_patches, num_points_per_patch=num_points_per_patch)
         self.decoder = Decoder(num_points_per_patch=num_points_per_patch)
         self.loss = ChamferLoss()
@@ -148,7 +148,7 @@ class PPFFoldNet_new(nn.Module):
 
 if __name__ == '__main__':
     input = torch.rand(32, 1024, 4)
-    model = PPFFoldNet_new(num_patches=32, num_points_per_patch=1024)
+    model = PPFFoldNet(num_patches=32, num_points_per_patch=1024)
     output = model(input)
     print("Input shape:", input.shape)
     print("Output shape:", output.shape)
