@@ -47,7 +47,25 @@ def loadlog(gtpath):
 
 
 if __name__ == '__main__':
-    gtpath = './result/'
-    gtlog = loadlog(gtpath)
-    print(gtlog.keys())
-    print(gtlog['0_1'])
+    # gtpath = './result/'
+    # gtlog = loadlog(gtpath)
+    # print(gtlog.keys())
+    # print(gtlog['0_1'])
+
+    a = get_desc("./intermediate-files-real/7-scenes-redkitchen/3dmatch_desc/", "cloud_bin_0", '3dmatch')
+    b = get_desc("./intermediate-files-real/7-scenes-redkitchen/3dmatch_desc/", "cloud_bin_1", '3dmatch')
+    a = np.nan_to_num(a)
+    b = np.nan_to_num(b)
+    c = get_desc("./ppf_desc_04301124/7-scenes-redkitchen/", "cloud_bin_0", 'ppf')
+    d = get_desc("./ppf_desc_04301124/7-scenes-redkitchen/", "cloud_bin_1", 'ppf')
+    assert a.shape == b.shape
+    assert a.dtype == b.dtype
+    from geometric_registration.evaluate_ppfnet import calculate_M
+    import time
+
+    start_time = time.time()
+    calculate_M(a, b)
+    print(time.time() - start_time)
+    start_time = time.time()
+    calculate_M(c, d)
+    print(time.time() - start_time)

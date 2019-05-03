@@ -8,3 +8,4 @@ geometric_registration/gt_result/*
 geometric_registration/pred_result/*
 geometric_registration/fragments/*
 geometric_registration/intermediate-files-real/*
+geometric_registration/ppf_desc*
