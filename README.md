@@ -30,7 +30,9 @@ This repo is implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322v1) 
     6. `utils.py`
  - `misc/`
 
+## Prepara the data
 
+Use `script/download.sh` to download all the training set from [3DMatch](http://3dmatch.cs.princeton.edu/)
 
 
 ## Milestone
