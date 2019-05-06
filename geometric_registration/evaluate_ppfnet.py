@@ -100,15 +100,17 @@ if __name__ == '__main__':
     scene_list = [
        '7-scenes-redkitchen',
        'sun3d-home_at-home_at_scan1_2013_jan_1',
-       'sun3d-home_md-home_md_scan9_2012_sep_30',
-       'sun3d-hotel_uc-scan3',
-       'sun3d-hotel_umd-maryland_hotel1',
+       #'sun3d-home_md-home_md_scan9_2012_sep_30',
+       #'sun3d-hotel_uc-scan3',
+       #'sun3d-hotel_umd-maryland_hotel1',
        'sun3d-hotel_umd-maryland_hotel3',
-       'sun3d-mit_76_studyroom-76-1studyroom2',
-       'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
+       #'sun3d-mit_76_studyroom-76-1studyroom2',
+       #'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
     ]
     desc_name = 'ppf'
     timestr = sys.argv[1]
+    inliers_list = []
+    recall_list = []
     for scene in scene_list:
         pcdpath = f"/data/3DMatch/fragments/{scene}/"
         interpath = f"/data/3DMatch/intermediate-files-real/{scene}/"
@@ -127,7 +129,7 @@ if __name__ == '__main__':
         for id1 in range(num_frag):
             for id2 in range(id1 + 1, num_frag):
                 num_inliers, inlier_ratio, gt_flag = register2Fragments(id1, id2, keyptspath, descpath, resultpath, desc_name)
-                print(f"- finish reigster point cloud{id1} and point cloud{id2}, {time.time() - start_time:.3f}s")
+    #            print(f"- finish reigster point cloud{id1} and point cloud{id2}, {time.time() - start_time:.3f}s")
         print(f"Finish Evaluation, time: {time.time() - start_time:.2f}s")
 
         # evaluate
@@ -144,4 +146,10 @@ if __name__ == '__main__':
         print(f"Recall {recall}%")
         ave_num_inliers = np.sum(np.where(result[:,1]>0.05, result[:,0], np.zeros(result.shape[0]))) / correct_match
         print(f"Average Num Inliners: {ave_num_inliers}")
-
+        recall_list.append(recall)
+        inliers_list.append(ave_num_inliers)
+    print(recall_list)
+    average_recall = sum(recall_list) / len(recall_list)
+    print(f"All 8 scene, average recall: {average_recall}%")
+    average_inliers = sum(inliers_list) / len(inliers_list)
+    print(f"All 8 scene, average num inliers: {average_inliers}")

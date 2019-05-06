@@ -24,7 +24,7 @@ class Encoder(nn.Module):
         self.bn3 = nn.BatchNorm1d(256)
         self.relu3 = nn.ReLU()
 
-        self.fc1 = nn.Linear(64 + 256, 1024)
+        self.fc1 = nn.Linear(704, 1024)
         self.fc2 = nn.Linear(1024, 512)  # codeword dimension = 512
         # self.bn4 = nn.BatchNorm1d(1024)
         # self.bn5 = nn.BatchNorm1d(512)
@@ -42,11 +42,11 @@ class Encoder(nn.Module):
         x = torch.max(x, 2, keepdim=True)[0]
         global_feature = x.repeat([1, 1, self.num_points_per_patches])
         # feature shape: [num_patches, 704, num_points_per_patch]
-        feature = torch.cat([local_feature_1, global_feature], 1)
+        feature = torch.cat([local_feature_1, local_feature_2, local_feature_3, global_feature], 1)
 
         # TODO: add batch_norm or not?
         x = F.relu(self.fc1(feature.transpose(1, 2)))
-        x = F.relu(self.fc2(x))
+        x = self.fc2(x)
 
         # TODO: still max at the second dimension.
         return torch.max(x, 1, keepdim=True)[0]  # [bs, 1, 512]

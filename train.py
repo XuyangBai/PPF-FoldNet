@@ -5,7 +5,6 @@ from torch import optim
 from trainer import Trainer
 from models.model_conv1d import PPFFoldNet
 from dataloader import get_dataloader
-from models.model_conv1d import PPFFoldNet
 
 
 class Args(object):
@@ -16,14 +15,14 @@ class Args(object):
         os.makedirs(snapshot_root, exist_ok=True)
         os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
-        shutil.copy2(os.path.join('.', 'models/new_model.py'), os.path.join(snapshot_root, 'model.py'))
-        self.epoch = 20
-        self.num_patches = 64
+        shutil.copy2(os.path.join('.', 'models/model_conv1d.py'), os.path.join(snapshot_root, 'model.py'))
+        self.epoch = 100
+        self.num_patches = 1
         self.num_points_per_patch = 1024  # num of points per patches
         # TODO: I do not know whether this is correct.
         #  I pick all the local patches from one point cloud fragment
         #  So the input to the network is [bs, 2048, num_points_per_patch, 4], but out of memory even batch size = 1
-        self.batch_size = 1
+        self.batch_size = 32
         self.dataset = 'sun3d'
         self.data_train_dir = '/data/3DMatch/whole'
         self.data_test_dir = '/data/3DMatch/whole'
@@ -43,7 +42,7 @@ class Args(object):
 
         # dataloader
         self.train_loader = get_dataloader(root=self.data_train_dir,
-                                           batch_size=1,
+                                           batch_size=self.batch_size,
                                            split='train',
                                            num_patches=self.num_patches,
                                            num_points_per_patch=self.num_points_per_patch,
@@ -51,7 +50,7 @@ class Args(object):
                                            on_the_fly=True
                                            )
         self.test_loader = get_dataloader(root=self.data_test_dir,
-                                          batch_size=1,
+                                          batch_size=self.batch_size,
                                           split='test',
                                           num_patches=self.num_patches,
                                           num_points_per_patch=self.num_points_per_patch,
