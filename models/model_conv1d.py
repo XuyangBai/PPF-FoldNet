@@ -46,7 +46,7 @@ class Encoder(nn.Module):
 
         # TODO: add batch_norm or not?
         x = F.relu(self.fc1(feature.transpose(1, 2)))
-        x = self.fc2(x)
+        x = F.relu(self.fc2(x))
 
         # TODO: still max at the second dimension.
         return torch.max(x, 1, keepdim=True)[0]  # [bs, 1, 512]
@@ -56,7 +56,7 @@ class Decoder(nn.Module):
     def __init__(self, num_points_per_patch=1024):
         super(Decoder, self).__init__()
         self.m = num_points_per_patch  # 32 * 32
-        self.meshgrid = [[-0.3, 0.3, 32], [-0.3, 0.3, 32]]
+        self.meshgrid = [[0, 1, 32], [0, 1, 32]]
         self.mlp1 = nn.Sequential(
             nn.Conv1d(514, 256, 1),
             nn.ReLU(),

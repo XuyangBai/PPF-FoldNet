@@ -22,6 +22,7 @@ def rgbd_to_point_cloud(data_dir, ind, show=False):
     intrinstic.set_intrinsics(640, 480, fx, fy, cx, cy)
     matrix = np.loadtxt(f"{data_dir}/{ind}.pose.txt")
     pcd = open3d.create_point_cloud_from_rgbd_image(rgbd_image, intrinstic, extrinsic=matrix)
+    pcd = open3d.voxel_down_sample(pcd, voxel_size=0.05)
     if show:
         open3d.draw_geometries([pcd])
     # pts = np.asarray(pcd.points)
@@ -29,7 +30,7 @@ def rgbd_to_point_cloud(data_dir, ind, show=False):
 
 
 def cal_local_normal(pcd):
-    if open3d.geometry.estimate_normals(pcd):
+    if open3d.geometry.estimate_normals(pcd, open3d.KDTreeSearchParamKNN(knn=17)):
         return True
     else:
         print("Calculate Normal Error")
@@ -68,7 +69,6 @@ def build_local_patch(ref_pcd, pcd, neighbor):
     local_patch = np.zeros([num_ref_point, num_point_per_patch, 4], dtype=float)
     # for each reference point
     for j, ref_point, ref_point_normal, inds in zip(range(num_ref_point), ref_pcd.points, ref_pcd.normals, neighbor):
-        ppfs = np.zeros([num_point_per_patch, 4])
         # for each point in this local patch
         ppfs = _ppf(ref_point, ref_point_normal, np.asarray(pcd.points)[inds], np.asarray(pcd.normals)[inds])
         # origin version: calculate one ppf each time, very SLOW!
@@ -89,11 +89,11 @@ def _ppf(point1, normal1, point2, normal2):
     # return np.array([dim1, dim2, dim3, len_d])
 
     d = point1 - point2  # [1024, 3]
-    len_d = np.sqrt(np.diag(np.dot(d, d.transpose())))  # [1024, 1]
+    len_d = np.sqrt(np.diag(np.dot(d, d.transpose()))) / 0.3  # [1024, 1]
     # element wise multiply https://docs.scipy.org/doc/numpy/reference/generated/numpy.multiply.html
-    dim1 = np.sum(np.multiply(normal1, d), axis=1) / len_d  # [1024, 1]
-    dim2 = np.sum(np.multiply(normal2, d), axis=1) / len_d  # [1024, 1]
-    dim3 = np.sum(np.multiply(normal1, normal2), axis=1)
+    dim1 = np.arccos(np.sum(np.multiply(normal1, d), axis=1) / len_d) / np.pi  # [1024, 1]
+    dim2 = np.arccos(np.sum(np.multiply(normal2, d), axis=1) / len_d) / np.pi  # [1024, 1]
+    dim3 = np.arccos(np.sum(np.multiply(normal1, normal2), axis=1)) / np.pi
     return np.array([dim1, dim2, dim3, len_d]).transpose()
 
 
