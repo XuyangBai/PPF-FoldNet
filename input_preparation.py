@@ -93,7 +93,7 @@ def _ppf(point1, normal1, point2, normal2):
     # element wise multiply https://docs.scipy.org/doc/numpy/reference/generated/numpy.multiply.html
     dim1 = np.arccos(np.sum(np.multiply(normal1, d), axis=1) / len_d) / np.pi  # [1024, 1]
     dim2 = np.arccos(np.sum(np.multiply(normal2, d), axis=1) / len_d) / np.pi  # [1024, 1]
-    dim3 = np.arccos(np.sum(np.multiply(normal1, normal2), axis=1)) / np.pi
+    dim3 = np.arccos(np.clip(np.sum(np.multiply(normal1, normal2), axis=1), a_min=-1, a_max=1)) / np.pi
     return np.array([dim1, dim2, dim3, len_d]).transpose()
 
 
