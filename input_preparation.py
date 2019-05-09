@@ -91,10 +91,19 @@ def _ppf(point1, normal1, point2, normal2):
     d = point1 - point2  # [1024, 3]
     len_d = np.sqrt(np.diag(np.dot(d, d.transpose()))) / 0.3  # [1024, 1]
     # element wise multiply https://docs.scipy.org/doc/numpy/reference/generated/numpy.multiply.html
-    dim1 = np.arccos(np.sum(np.multiply(normal1, d), axis=1) / len_d) / np.pi  # [1024, 1]
-    dim2 = np.arccos(np.sum(np.multiply(normal2, d), axis=1) / len_d) / np.pi  # [1024, 1]
-    dim3 = np.arccos(np.clip(np.sum(np.multiply(normal1, normal2), axis=1), a_min=-1, a_max=1)) / np.pi
-    return np.array([dim1, dim2, dim3, len_d]).transpose()
+    y = np.sum(np.multiply(normal1, d), axis=1)
+    x = np.linalg.norm(np.cross(normal1, d), axis=1)
+    dim1_ = np.arctan2(x, y) / np.pi
+    # dim1 = np.arccos(np.sum(np.multiply(normal1, d), axis=1) / len_d) / np.pi  # [1024, 1]
+    y = np.sum(np.multiply(normal2, d), axis=1)
+    x = np.linalg.norm(np.cross(normal2, d), axis=1)
+    dim2_ = np.arctan2(x, y) / np.pi
+    # dim2 = np.arccos(np.sum(np.multiply(normal2, d), axis=1) / len_d) / np.pi  # [1024, 1]
+    y = np.sum(np.multiply(normal1, normal2), axis=1)
+    x = np.linalg.norm(np.cross(normal1, normal2), axis=1)
+    dim3_ = np.arctan2(x, y) / np.pi
+    # dim3 = np.arccos(np.clip(np.sum(np.multiply(normal1, normal2), axis=1), a_min=-1, a_max=1)) / np.pi
+    return np.array([dim1_, dim2_, dim3_, len_d]).transpose()
 
 
 def input_preprocess(data_dir, id, save_dir):
