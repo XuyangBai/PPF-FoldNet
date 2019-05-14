@@ -3,29 +3,28 @@ import time
 import shutil
 from torch import optim
 from trainer import Trainer
-from models.model_conv1d import PPFFoldNet
-from dataloader import get_dataloader
+# from models.model_conv1d import PPFFoldNet
+from models.model_supervised import MyNet
+from dataloader import get_dataloader_supervised
+from loss.batch_hard_loss import batch_hard_loss
 
 
 class Args(object):
     def __init__(self):
-        self.experiment_id = "PPF-FoldNet" + time.strftime('%m%d%H%M')
+        self.experiment_id = "MyNet" + time.strftime('%m%d%H%M')
         snapshot_root = 'snapshot/%s' % self.experiment_id
         tensorboard_root = 'tensorboard/%s' % self.experiment_id
         os.makedirs(snapshot_root, exist_ok=True)
         os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
-        shutil.copy2(os.path.join('.', 'models/model_conv1d.py'), os.path.join(snapshot_root, 'model.py'))
+        shutil.copy2(os.path.join('.', 'models/model_supervised.py'), os.path.join(snapshot_root, 'model.py'))
         self.epoch = 100
         self.num_patches = 1
         self.num_points_per_patch = 1024  # num of points per patches
-        # TODO: I do not know whether this is correct.
-        #  I pick all the local patches from one point cloud fragment
-        #  So the input to the network is [bs, 2048, num_points_per_patch, 4], but out of memory even batch size = 1
         self.batch_size = 32
         self.dataset = 'sun3d'
-        self.data_train_dir = '/data/3DMatch/whole'
-        self.data_test_dir = '/data/3DMatch/whole'
+        self.data_train_dir = '/data/3DMatch/'
+        self.data_test_dir = '/data/3DMatch/'
         # self.data_train_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/'
         # self.data_test_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed'
 
@@ -33,7 +32,7 @@ class Args(object):
         self.verbose = True
 
         # model & optimizer
-        self.model = PPFFoldNet(self.num_patches, self.num_points_per_patch)
+        self.model = MyNet(self.num_patches, self.num_points_per_patch)
         self.pretrain = ''
         self.parameter = self.model.get_parameter()
         self.optimizer = optim.Adam(self.parameter, lr=0.001, betas=(0.9, 0.999), weight_decay=1e-6)
@@ -41,22 +40,20 @@ class Args(object):
         self.scheduler_interval = 10
 
         # dataloader
-        self.train_loader = get_dataloader(root=self.data_train_dir,
-                                           batch_size=self.batch_size,
-                                           split='train',
-                                           num_patches=self.num_patches,
-                                           num_points_per_patch=self.num_points_per_patch,
-                                           shuffle=True,
-                                           on_the_fly=True
-                                           )
-        self.test_loader = get_dataloader(root=self.data_test_dir,
-                                          batch_size=self.batch_size,
-                                          split='test',
-                                          num_patches=self.num_patches,
-                                          num_points_per_patch=self.num_points_per_patch,
-                                          shuffle=False,
-                                          on_the_fly=True
-                                          )
+        self.train_loader = get_dataloader_supervised(root=self.data_train_dir,
+                                                      batch_size=self.batch_size,
+                                                      split='train',
+                                                      num_patches=self.num_patches,
+                                                      num_points_per_patch=self.num_points_per_patch,
+                                                      shuffle=True,
+                                                      )
+        self.test_loader = get_dataloader_supervised(root=self.data_test_dir,
+                                                     batch_size=self.batch_size,
+                                                     split='train',
+                                                     num_patches=self.num_patches,
+                                                     num_points_per_patch=self.num_points_per_patch,
+                                                     shuffle=False,
+                                                     )
         print("Training set size:", self.train_loader.dataset.__len__())
         print("Test set size:", self.test_loader.dataset.__len__())
 
@@ -68,6 +65,7 @@ class Args(object):
 
         # evaluate
         self.evaluate_interval = 1
+        self.evaluate_metric = batch_hard_loss
 
         self.check_args()
 

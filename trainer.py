@@ -25,8 +25,9 @@ class Trainer(object):
         self.scheduler_interval = args.scheduler_interval
         self.snapshot_interval = args.snapshot_interval
         self.evaluate_interval = args.evaluate_interval
+        self.evaluate_metric = args.evaluate_metric
         self.writer = SummaryWriter(log_dir=args.tboard_dir)
-        
+
         self.train_loader = args.train_loader
         self.test_loader = args.test_loader
 
@@ -60,10 +61,10 @@ class Trainer(object):
                     self._snapshot('best')
                 if self.writer:
                     self.writer.add_scalar('Loss', res['loss'], epoch)
-             
+
             if epoch % self.scheduler_interval == 0:
                 self.scheduler.step()
-            
+
             if (epoch + 1) % self.snapshot_interval == 0:
                 self._snapshot(epoch + 1)
 
@@ -81,14 +82,19 @@ class Trainer(object):
         epoch_start_time = time.time()
         loss_buf = []
         num_batch = int(len(self.train_loader.dataset) / self.batch_size)
-        for iter, (patches, ids) in enumerate(self.train_loader):
-            patches = patches.reshape([-1, patches.shape[2], patches.shape[3]])
+        for iter, (anc, pos) in enumerate(self.train_loader):
+            anc = anc.reshape([-1, anc.shape[2], anc.shape[3]])
+            pos = pos.reshape([-1, pos.shape[2], pos.shape[3]])
+            patches = torch.cat([anc, pos], dim=0)
             if self.gpu_mode:
                 patches = patches.cuda()
+
             # forward
             self.optimizer.zero_grad()
-            output = self.model(patches)
-            loss = self.model.get_loss(patches, output)
+            patches = self.model(patches)
+            anc_desc, pos_desc = torch.split(patches, int(patches.shape[0] / 2), dim=0)
+            loss = self.evaluate_metric(anc_desc, pos_desc)
+
             # backward
             loss.backward()
             self.optimizer.step()
@@ -99,7 +105,7 @@ class Trainer(object):
                 iter_time = time.time() - epoch_start_time
                 print(f"Epoch: {epoch+1} [{iter+1:4d}/{num_batch}] loss: {loss:.2f} time: {iter_time:.2f}s")
             del loss
-            del output
+            del patches
         # finish one epoch
         epoch_time = time.time() - epoch_start_time
         self.train_hist['per_epoch_time'].append(epoch_time)
@@ -110,15 +116,18 @@ class Trainer(object):
     def evaluate(self, epoch):
         self.model.eval()
         loss_buf = []
-        for iter, (patches, ids) in enumerate(self.test_loader):
-            patches = patches.reshape([-1, patches.shape[2], patches.shape[3]])
+        for iter, (anc, pos) in enumerate(self.test_loader):
+            anc = anc.reshape([-1, anc.shape[2], anc.shape[3]])
+            pos = pos.reshape([-1, pos.shape[2], pos.shape[3]])
+            patches = torch.cat([anc, pos], dim=0)
             if self.gpu_mode:
                 patches = patches.cuda()
-            output = self.model(patches)
-            loss = self.model.get_loss(patches, output)
+            patches = self.model(patches)
+            anc_desc, pos_desc = torch.split(patches, int(patches.shape[0] / 2), dim=0)
+            loss = self.evaluate_metric(anc_desc, pos_desc)
             loss_buf.append(float(loss))
             del loss
-            del output
+            del patches
         self.model.train()
         res = {
             'loss': np.mean(loss_buf),
