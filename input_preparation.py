@@ -45,7 +45,7 @@ def select_referenced_point(pcd, num_patches=2048):
     return open3d.geometry.select_down_sample(pcd, inds)
 
 
-def collect_local_neighbor(ref_pcd, pcd, vicinity=0.3, num_points_per_patch=1024):
+def collect_local_neighbor(ref_pcd, pcd, vicinity=0.3, num_points_per_patch=1024, random_state=None):
     # collect local neighbor within vicinity for each interest point.
     # each local patch is downsampled to 1024 (setting of PPFNet p5.)
     kdtree = open3d.geometry.KDTreeFlann(pcd)
@@ -54,10 +54,16 @@ def collect_local_neighbor(ref_pcd, pcd, vicinity=0.3, num_points_per_patch=1024
         # Bug fix: here the first returned result will be itself. So the calculated ppf will be nan.
         [k, idx, variant] = kdtree.search_radius_vector_3d(point, vicinity)
         # random select fix number [num_points] of points to form the local patch.
-        if k > num_points_per_patch:
-            idx = np.random.choice(idx[1:], num_points_per_patch, replace=False)
+        if random_state is not None:
+            if k > num_points_per_patch:
+                idx = random_state.choice(idx[1:], num_points_per_patch, replace=False)
+            else:
+                idx = random_state.choice(idx[1:], num_points_per_patch)
         else:
-            idx = np.random.choice(idx[1:], num_points_per_patch)
+            if k > num_points_per_patch:
+                idx = np.random.choice(idx[1:], num_points_per_patch, replace=False)
+            else:
+                idx = np.random.choice(idx[1:], num_points_per_patch)
         dict.append(idx)
     return dict
 
