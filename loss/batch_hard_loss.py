@@ -1,15 +1,21 @@
 import numpy as np
 import torch
 import numbers
-
+import torch.nn as nn
 from loss.common import cdist
 
 
-def batch_hard_loss(anchor, positive, margin=1, metric='euclidean'):
-    pids = torch.FloatTensor(np.arange(len(anchor)))
-    if torch.cuda.is_available():
-        pids = pids.cuda()
-    return batch_hard(cdist(anchor, positive, metric=metric), pids, margin=margin)
+class BatchHardLoss(nn.Module):
+    def __init__(self, margin, metric):
+        super(BatchHardLoss, self).__init__()
+        self.margin = margin
+        self.metric = metric
+
+    def forward(self, anchor, positive):
+        pids = torch.FloatTensor(np.arange(len(anchor)))
+        if torch.cuda.is_available():
+            pids = pids.cuda()
+        return batch_hard(cdist(anchor, positive, metric=self.metric), pids, margin=self.margin)
 
 
 def batch_hard(dists, pids, margin=1, batch_precision_at_k=None):
@@ -50,12 +56,14 @@ def batch_hard(dists, pids, margin=1, batch_precision_at_k=None):
 
 
 if __name__ == '__main__':
-    a = torch.Tensor([[1, 2, 3, 4], [3, 4, 7, 8], [9, 10, 21, 12]])
-    b = torch.Tensor([[3, 3, 3, 4], [7, 8, 6, 8], [9, 10, 1, 2]])
+    a = torch.Tensor(np.random.normal(0, 1, [32, 16]))
+    b = torch.Tensor(np.random.normal(0, 1, [32, 16]))
+    # a = torch.Tensor(np.zeros([32, 16]))
+    # b = torch.Tensor(np.zeros([32, 16]))
     # print(cdist(a, b, metric='cityblock'))
     # print(cdist(a, b, metric='sqeuclidean'))
     # print(cdist(a, b, metric='euclidean'))
-    pids = torch.FloatTensor([1, 2, 3])
+    pids = torch.FloatTensor(np.arange(32))
     loss = batch_hard(cdist(a, b, metric='euclidean'), pids, margin=0)
     # print(torch.sum(loss) / len(a))
     print(loss)

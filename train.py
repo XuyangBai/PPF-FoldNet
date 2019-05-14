@@ -6,7 +6,7 @@ from trainer import Trainer
 # from models.model_conv1d import PPFFoldNet
 from models.model_supervised import MyNet
 from dataloader import get_dataloader_supervised
-from loss.batch_hard_loss import batch_hard_loss
+from loss.batch_hard_loss import BatchHardLoss
 
 
 class Args(object):
@@ -66,7 +66,7 @@ class Args(object):
 
         # evaluate
         self.evaluate_interval = 1
-        self.evaluate_metric = batch_hard_loss
+        self.evaluate_metric = BatchHardLoss(margin='soft', metric='euclidean')
 
         self.check_args()
 
