@@ -23,8 +23,8 @@ class Args(object):
         self.num_points_per_patch = 1024  # num of points per patches
         self.batch_size = 32
         self.dataset = 'sun3d'
-        self.data_train_dir = '/data/3DMatch/'
-        self.data_test_dir = '/data/3DMatch/'
+        self.data_train_dir = '/data/3DMatch/whole'
+        self.data_test_dir = '/data/3DMatch/whole'
         # self.data_train_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/'
         # self.data_test_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed'
 
@@ -46,17 +46,18 @@ class Args(object):
                                                       num_patches=self.num_patches,
                                                       num_points_per_patch=self.num_points_per_patch,
                                                       shuffle=True,
+                                                      num_workers=4,
                                                       )
         self.test_loader = get_dataloader_supervised(root=self.data_test_dir,
                                                      batch_size=self.batch_size,
-                                                     split='train',
+                                                     split='test',
                                                      num_patches=self.num_patches,
                                                      num_points_per_patch=self.num_points_per_patch,
                                                      shuffle=False,
+                                                     num_workers=4,
                                                      )
         print("Training set size:", self.train_loader.dataset.__len__())
         print("Test set size:", self.test_loader.dataset.__len__())
-
         # snapshot
         self.snapshot_interval = 5
         self.save_dir = os.path.join(snapshot_root, 'models/')

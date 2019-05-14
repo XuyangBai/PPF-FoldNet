@@ -42,8 +42,8 @@ def get_dataloader_supervised(root, split, batch_size=1, num_patches=32, num_poi
 
 if __name__ == '__main__':
     dataset = 'sun3d'
-    dataroot = "/data/3DMatch/"
-    trainloader = get_dataloader(dataroot, split='test', batch_size=32)
+    dataroot = "/data/3DMatch/whole"
+    # trainloader = get_dataloader(dataroot, split='test', batch_size=32)
     # start_time = time.time()
     # print(f"Totally {len(trainloader)} iter.")
     # for iter, (patches, ids) in enumerate(trainloader):
@@ -51,7 +51,8 @@ if __name__ == '__main__':
     #         print(f"Iter {iter}: {time.time() - start_time} s")
     # print(f"On the fly: {time.time() - start_time}")
 
-    trainloader = get_dataloader_supervised(dataroot, split='test', batch_size=1)
+    trainloader = get_dataloader_supervised(dataroot, split='train', batch_size=1, num_patches=1, num_workers=1)
     for iter, (anc, pos) in enumerate(trainloader):
         print(anc.shape)
         print(pos.shape)
+        print(iter)

@@ -93,7 +93,10 @@ class SunDataset_Supervised(data.Dataset):
             if split == 'train' and len(self.ids_list) > 50000:
                 break
             if split == 'test' and len(self.ids_list) > 1000:
+                self.ids_list = self.ids_list[0:1000]
+                self.scene_to_ids[scene] = self.ids_list
                 break
+
 
     def __getitem__(self, index):
         try:

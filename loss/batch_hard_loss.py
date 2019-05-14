@@ -7,6 +7,8 @@ from loss.common import cdist
 
 def batch_hard_loss(anchor, positive, margin=1, metric='euclidean'):
     pids = torch.FloatTensor(np.arange(len(anchor)))
+    if torch.cuda.is_available():
+        pids = pids.cuda()
     return batch_hard(cdist(anchor, positive, metric=metric), pids, margin=margin)
 
 
@@ -37,7 +39,7 @@ def batch_hard(dists, pids, margin=1, batch_precision_at_k=None):
     diff = furthest_positive - closest_negative
 
     if isinstance(margin, numbers.Real):
-        diff = torch.max(diff + margin, torch.zeros(diff.shape))
+        diff = torch.max(diff + margin, torch.zeros_like(diff))
     elif margin == 'soft':
         diff = torch.nn.Softplus()(diff)
     else:
