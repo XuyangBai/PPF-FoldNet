@@ -96,19 +96,22 @@ class SunDataset_Supervised(data.Dataset):
                 break
 
     def __getitem__(self, index):
-
-        anc_id = self.ids_list[index]
-        anchor_scene = anc_id.split("/")[0]
-        # training set select positive point randomly
-        if self.split == 'train':
-            pos_id = np.random.choice(self.scene_to_ids[anchor_scene])
-            random_state = None
-        # for test set we should select positive point fixed. So create a random state
-        else:
-            random_state = np.random.RandomState(51)
-            pos_id = random_state.choice(self.scene_to_ids[anchor_scene])
-        anchor, positive = get_positive(self.root, anc_id, pos_id, self.num_patches, random_state)
-        return anchor, positive
+        try:
+            anc_id = self.ids_list[index]
+            anchor_scene = anc_id.split("/")[0]
+            # training set select positive point randomly
+            if self.split == 'train':
+                pos_id = np.random.choice(self.scene_to_ids[anchor_scene])
+                random_state = None
+            # for test set we should select positive point fixed. So create a random state
+            else:
+                random_state = np.random.RandomState(51)
+                pos_id = random_state.choice(self.scene_to_ids[anchor_scene])
+            anchor, positive = get_positive(self.root, anc_id, pos_id, self.num_patches, random_state)
+            return anchor, positive
+        except:
+            print(f"get item {self.ids_list[index]} error")
+            return self.__getitem__(np.random.choice(len(self.ids_list)))
 
     def __len__(self):
         return len(self.ids_list)
@@ -135,6 +138,7 @@ def get_positive(root, anc_id, pos_id, num_patches, random_state=None):
     anchor_local_patch = build_local_patch(anc_pts, anc_pcd, anchor_neighbor)
 
     # for each points in anchor, find the nn in positive point cloud
+    # TODO: there might be some repitition.
     kdtree = open3d.geometry.KDTreeFlann(pos_pcd)
     pos_ind = []
     for pts in anc_pts.points:
