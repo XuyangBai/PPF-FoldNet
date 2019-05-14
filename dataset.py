@@ -37,16 +37,10 @@ class SunDataset(data.Dataset):
             ids = [scene + "/seq-01/" + str(filename.split(".")[0]) for filename in os.listdir(os.path.join(self.root, scene + '/seq-01/'))]
             self.ids_list += sorted(list(set(ids)))
             self.scene_list.append(scene)
-        if split == 'test':
-            self.ids_list = self.ids_list[0:1000]
-        if split == 'train':
-            self.ids_list = self.ids_list[0:10000]
-        # self.ids_list = [filename.split(".")[0] for filename in os.listdir(self.root)]
-        # self.ids_list = sorted(list(set(self.ids_list)))
-        # if split == 'train':
-        #     self.ids_list = self.ids_list[0: int(0.8 * len(self.ids_list))]
-        # else:
-        #     self.ids_list = self.ids_list[int(0.8 * len(self.ids_list)):-1]
+        #if split == 'test':
+        #    self.ids_list = self.ids_list[0:10000]
+        #if split == 'train':
+        #    self.ids_list = self.ids_list[0:50000]
 
     def __getitem__(self, index):
         id = self.ids_list[index]
@@ -54,8 +48,8 @@ class SunDataset(data.Dataset):
             try:
                 return get_local_patches_on_the_fly(self.root, id, self.num_patches, self.num_points_per_patch), id
             except:
-                print(index, "cannot open")
-                return self.__getitem__(index + 1)
+                print(id, "cannot open")
+                return self.__getitem__(0)
 
         ind = np.random.choice(range(2048), self.num_patches, replace=False)
         patches = np.load(os.path.join(self.root, self.ids_list[index] + ".npy"))
@@ -75,22 +69,26 @@ class SunDataset(data.Dataset):
 
 if __name__ == '__main__':
     datapath = "/data/3DMatch/whole"
-    d = SunDataset(root=datapath, split='train', on_the_fly=True)
-    print(len(d.ids_list))
-    print(d.scene_list)
-    #start_time = time.time()
-    #for i in range(100):
-    #    patches, id = d[i]
-    #print(f"On the fly: {time.time() - start_time}")
-
-    datapath = "/data/3DMatch/whole"
     d = SunDataset(root=datapath, split='test', on_the_fly=True)
     print(len(d.ids_list))
-    print(d.scene_list)
-    tart_time = time.time()
-    for i in range(1000):
+    # print(d.scene_list)
+    start_time = time.time()
+    for i in range(len(d.ids_list)):
         patches, id = d[i]
-    print(f"Not On the fly: {time.time() - start_time}")
+        if i % 100 == 0:
+            print(f"{i} : {time.time() - start_time} s")
+    print(f"Test set On the fly: {time.time() - start_time}")
+
+    datapath = "/data/3DMatch/whole"
+    d = SunDataset(root=datapath, split='train', on_the_fly=True)
+    print(len(d.ids_list))
+    #print(d.scene_list)
+    start_time = time.time()
+    for i in range(len(d.ids_list)):
+        patches, id = d[i]
+        if i % 100 == 0:
+            print(f"{i}: {time.time() - start_time} s")
+    print(f"Training set On the fly: {time.time() - start_time}")
 
     # datapath = "/data/3DMatch/whole/"
     # d = SunDataset(root=datapath, split='train', on_the_fly=True)

@@ -39,21 +39,12 @@ def get_dataloader(root, split, batch_size=1, num_patches=32, num_points_per_pat
 
 if __name__ == '__main__':
     dataset = 'sun3d'
-    dataroot = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train"
-    trainloader = get_dataloader(dataroot, split='train', batch_size=1)
+    dataroot = "/data/3DMatch/whole"
+    trainloader = get_dataloader(dataroot, split='test', batch_size=32)
     start_time = time.time()
+    print(f"Totally {len(trainloader)} iter.")
     for iter, (patches, ids) in enumerate(trainloader):
-        print("patches:", patches.shape)
-        # print("ids:", ids)
-        if iter == 9:
-            break
+        if iter % 100 == 0:
+            print(f"Iter {iter}: {time.time() - start_time} s")
     print(f"On the fly: {time.time() - start_time}")
 
-    dataroot = "./data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed"
-    trainloader = get_dataloader(dataroot, split='train', batch_size=1, on_the_fly=False)
-    start_time = time.time()
-    for iter, (patches, ids) in enumerate(trainloader):
-        print("patches:", patches.shape)
-        if iter == 9:
-            break
-    print(f"Not on the fly: {time.time() - start_time}")

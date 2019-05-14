@@ -72,8 +72,8 @@ def generate_descriptor(model, desc_name, pcdpath, ppfpath, ppfdescpath):
         model = model.cuda()
         # cuda out of memry
         desc_list = []
-        for i in range(500):
-            step_size = int(5000 / 500)
+        for i in range(50):
+            step_size = int(5000 / 50)
             desc = model.encoder(input_[i * step_size: (i + 1) * step_size, :, :])
             desc_list.append(desc.detach().cpu().numpy())
             del desc
@@ -85,12 +85,12 @@ if __name__ == '__main__':
     scene_list = [
        '7-scenes-redkitchen',
        'sun3d-home_at-home_at_scan1_2013_jan_1',
-       #'sun3d-home_md-home_md_scan9_2012_sep_30',
-       #'sun3d-hotel_uc-scan3',
-       #'sun3d-hotel_umd-maryland_hotel1',
+       'sun3d-home_md-home_md_scan9_2012_sep_30',
+       'sun3d-hotel_uc-scan3',
+       'sun3d-hotel_umd-maryland_hotel1',
        'sun3d-hotel_umd-maryland_hotel3',
-       #'sun3d-mit_76_studyroom-76-1studyroom2',
-       #'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
+       'sun3d-mit_76_studyroom-76-1studyroom2',
+       'sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika'
     ]
     # datapath = "./data/test/sun3d-hotel_umd-maryland_hotel3/"
     # interpath = "./data/intermediate-files-real/sun3d-hotel_umd-maryland_hotel3/"
@@ -114,6 +114,8 @@ if __name__ == '__main__':
         keyptspath = os.path.join(interpath, "keypoints/")
         ppfpath = os.path.join(interpath, "ppf/")
         ppfdescpath = os.path.join('.',f"ppf_desc_{model_str}/{scene}/")
+        if not os.path.exists(ppfpath):
+            os.mkdir(ppfpath)
         if not os.path.exists(ppfdescpath):
             os.mkdir(ppfdescpath)
         start_time = time.time()
