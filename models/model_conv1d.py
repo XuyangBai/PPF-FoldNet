@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import itertools
-from loss import ChamferLoss
 from torchsummary import summary
 
 
@@ -38,7 +37,7 @@ class Encoder(nn.Module):
         local_feature_2 = x
         x = self.relu3(self.bn3(self.conv3(x)))
         local_feature_3 = x
-        # TODO: max at the third dimension, which means that for one local patch, choose the largest feature.
+        # max at the third dimension, which means that for one local patch, choose the largest feature.
         x = torch.max(x, 2, keepdim=True)[0]
         global_feature = x.repeat([1, 1, self.num_points_per_patches])
         # feature shape: [num_patches, 704, num_points_per_patch]
@@ -48,7 +47,7 @@ class Encoder(nn.Module):
         x = F.relu(self.fc1(feature.transpose(1, 2)))
         x = F.relu(self.fc2(x))
 
-        # TODO: still max at the second dimension.
+        # still max at the second dimension.
         return torch.max(x, 1, keepdim=True)[0]  # [bs, 1, 512]
 
 
@@ -119,7 +118,6 @@ class PPFFoldNet(nn.Module):
         super(PPFFoldNet, self).__init__()
         self.encoder = Encoder(num_patches=num_patches, num_points_per_patch=num_points_per_patch)
         self.decoder = Decoder(num_points_per_patch=num_points_per_patch)
-        self.loss = ChamferLoss()
 
         # Print the params size of this model.
         if torch.cuda.is_available():
@@ -141,9 +139,6 @@ class PPFFoldNet(nn.Module):
 
     def get_parameter(self):
         return list(self.encoder.parameters()) + list(self.decoder.parameters())
-
-    def get_loss(self, input, output):
-        return self.loss(input, output)
 
 
 if __name__ == '__main__':

@@ -3,15 +3,14 @@ import time
 import shutil
 from torch import optim
 from trainer import Trainer
-# from models.model_conv1d import PPFFoldNet
-from models.model_supervised import MyNet
-from dataloader import get_dataloader_supervised
-from loss.batch_hard_loss import BatchHardLoss
+from models.model_conv1d import PPFFoldNet
+from dataloader import get_dataloader
+from loss.chamfer_loss import ChamferLoss
 
 
 class Args(object):
     def __init__(self):
-        self.experiment_id = "MyNet" + time.strftime('%m%d%H%M')
+        self.experiment_id = "PPF-FoldNet" + time.strftime('%m%d%H%M')
         snapshot_root = 'snapshot/%s' % self.experiment_id
         tensorboard_root = 'tensorboard/%s' % self.experiment_id
         os.makedirs(snapshot_root, exist_ok=True)
@@ -23,16 +22,16 @@ class Args(object):
         self.num_points_per_patch = 1024  # num of points per patches
         self.batch_size = 32
         self.dataset = 'sun3d'
-        self.data_train_dir = '/data/3DMatch/whole'
-        self.data_test_dir = '/data/3DMatch/whole'
+        self.data_train_dir = './data/3DMatch/'
+        self.data_test_dir = './data/3DMatch/'
         # self.data_train_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/'
         # self.data_test_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed'
 
-        self.gpu_mode = True
+        self.gpu_mode = False
         self.verbose = True
 
         # model & optimizer
-        self.model = MyNet(self.num_patches, self.num_points_per_patch)
+        self.model = PPFFoldNet(self.num_patches, self.num_points_per_patch)
         self.pretrain = ''
         self.parameter = self.model.get_parameter()
         self.optimizer = optim.Adam(self.parameter, lr=0.001, betas=(0.9, 0.999), weight_decay=1e-6)
@@ -66,7 +65,7 @@ class Args(object):
 
         # evaluate
         self.evaluate_interval = 1
-        self.evaluate_metric = BatchHardLoss(margin='soft', metric='euclidean')
+        self.evaluate_metric = ChamferLoss()
 
         self.check_args()
 
