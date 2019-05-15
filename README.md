@@ -1,5 +1,5 @@
 # PyTorch PPF-FoldNet
-This repo is implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322v1) in pytorch. 
+This repo is the implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322v1) in pytorch 1.0 . 
 
 ## Project Structure
 
@@ -39,6 +39,14 @@ This repo is implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322v1) 
 Use `script/download.sh` to download all the training set from [3DMatch](http://3dmatch.cs.princeton.edu/)
 
 And the intermediate file is downloaded from this [link](http://vision.princeton.edu/projects/2016/3DMatch/downloads/scene-fragments/intermediate-files-real.zip)
+
+## Train the model
+
+```bash
+python train.py 
+```
+
+All the configuration is in the `train.py`. When you start training, the `train.py` and `model.py` will be saved in the `snapshot/` folder and the tensorboard file is saved in `tensorboard/`.
 
 ## Performance
 
