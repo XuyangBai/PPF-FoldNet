@@ -40,8 +40,17 @@ Use `script/download.sh` to download all the training set from [3DMatch](http://
 
 And the intermediate file is downloaded from this [link](http://vision.princeton.edu/projects/2016/3DMatch/downloads/scene-fragments/intermediate-files-real.zip)
 
+## Performance
 
-## Milestone
+| Model | Average Recall |  
+| :---: | :---: | 
+| PPF-FoldNet | 67.6% | 
+| Origin Paper| 71.8% | 
+| 3DMatch     | 57.3% |  
+
+The model with best performance is in folder `snapshot/`
+
+## Implementation Milestone
 - 3.25: Initial Version
     - Realize the network architecture of PPF-FoldNet(but actually is very similar with FoldingNet and I have partially achieve the result of FoldingNet, the reconstruction and interpolation looks good.)
     - The input is still the point coordinates for now. And the dataset used is ShapeNet. This is the main aim of next step implementation.
@@ -58,5 +67,5 @@ And the intermediate file is downloaded from this [link](http://vision.princeton
     - Add relu for the last layer of encoder. (I have done some experiment, the result shows that whether adding relu layer does not affect the performance much)
     - Remaining question is the descriptor has many zeros. (about half of the 512 dimension is 0.)
     
-## Performance
+
 
