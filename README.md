@@ -52,11 +52,11 @@ All the configuration is in the `train.py`. When you start training, the `train.
 
 | Model | Average Recall |  
 | :---: | :---: | 
-| PPF-FoldNet | 67.6% | 
+| PPF-FoldNet | 69.3% | 
 | Origin Paper| 71.8% | 
 | 3DMatch     | 57.3% |  
 
-The model with best performance is in folder `snapshot/`
+The model with best performance is in folder `pretrained/`
 
 ## Implementation Milestone
 - 3.25: Initial Version
