@@ -34,7 +34,7 @@ This repo is the implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322
 - `intermediate-files-real/`: dictionary that saves the keypoints coordinates for each scene.
 - `fragments/`: dictionary that save the point cloud fragments for each scene.
 
-## Prepara the data
+## Prepara the date
 
 Use `script/download.sh` to download all the training set from [3DMatch](http://3dmatch.cs.princeton.edu/)
 
@@ -48,15 +48,19 @@ python train.py
 
 All the configuration is in the `train.py`. When you start training, the `train.py` and `model.py` will be saved in the `snapshot/` folder and the tensorboard file is saved in `tensorboard/`.
 
+## Evaluate the model
+
+See [Geometric Registration](https://github.com/XuyangBai/PPF-FoldNet/tree/master/geometric_registration) for detail
+
 ## Performance
 
 | Model | Average Recall |  
 | :---: | :---: | 
-| PPF-FoldNet | 67.6% | 
+| PPF-FoldNet | 69.3% | 
 | Origin Paper| 71.8% | 
 | 3DMatch     | 57.3% |  
 
-The model with best performance is in folder `snapshot/`
+The model with best performance is in folder `pretrained/`
 
 ## Implementation Milestone
 - 3.25: Initial Version
