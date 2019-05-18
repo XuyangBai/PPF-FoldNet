@@ -16,18 +16,18 @@ class Args(object):
         os.makedirs(snapshot_root, exist_ok=True)
         os.makedirs(tensorboard_root, exist_ok=True)
         shutil.copy2(os.path.join('.', 'train.py'), os.path.join(snapshot_root, 'train.py'))
-        shutil.copy2(os.path.join('.', 'models/model_supervised.py'), os.path.join(snapshot_root, 'model.py'))
-        self.epoch = 100
+        shutil.copy2(os.path.join('.', 'models/model_conv1d.py'), os.path.join(snapshot_root, 'model.py'))
+        self.epoch = 20
         self.num_patches = 1
         self.num_points_per_patch = 1024  # num of points per patches
         self.batch_size = 32
         self.dataset = 'sun3d'
-        self.data_train_dir = './data/3DMatch/'
-        self.data_test_dir = './data/3DMatch/'
+        self.data_train_dir = '/data/3DMatch/whole'
+        self.data_test_dir = '/data/3DMatch/whole'
         # self.data_train_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/'
         # self.data_test_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed'
 
-        self.gpu_mode = False
+        self.gpu_mode = True
         self.verbose = True
 
         # model & optimizer
@@ -39,7 +39,7 @@ class Args(object):
         self.scheduler_interval = 10
 
         # dataloader
-        self.train_loader = get_dataloader_supervised(root=self.data_train_dir,
+        self.train_loader = get_dataloader(root=self.data_train_dir,
                                                       batch_size=self.batch_size,
                                                       split='train',
                                                       num_patches=self.num_patches,
@@ -47,7 +47,7 @@ class Args(object):
                                                       shuffle=True,
                                                       num_workers=4,
                                                       )
-        self.test_loader = get_dataloader_supervised(root=self.data_test_dir,
+        self.test_loader = get_dataloader(root=self.data_test_dir,
                                                      batch_size=self.batch_size,
                                                      split='test',
                                                      num_patches=self.num_patches,
@@ -58,13 +58,13 @@ class Args(object):
         print("Training set size:", self.train_loader.dataset.__len__())
         print("Test set size:", self.test_loader.dataset.__len__())
         # snapshot
-        self.snapshot_interval = 5
+        self.snapshot_interval = 100000
         self.save_dir = os.path.join(snapshot_root, 'models/')
         self.result_dir = os.path.join(snapshot_root, 'results/')
         self.tboard_dir = tensorboard_root
 
         # evaluate
-        self.evaluate_interval = 1
+        self.evaluate_interval = 2
         self.evaluate_metric = ChamferLoss()
 
         self.check_args()

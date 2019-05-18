@@ -82,18 +82,15 @@ class Trainer(object):
         epoch_start_time = time.time()
         loss_buf = []
         num_batch = int(len(self.train_loader.dataset) / self.batch_size)
-        for iter, (anc, pos) in enumerate(self.train_loader):
-            anc = anc.reshape([-1, anc.shape[2], anc.shape[3]])
-            pos = pos.reshape([-1, pos.shape[2], pos.shape[3]])
-            patches = torch.cat([anc, pos], dim=0)
+        for iter, (patches, ids) in enumerate(self.train_loader):
+            patches = patches.reshape([-1, patches.shape[2], patches.shape[3]])
             if self.gpu_mode:
                 patches = patches.cuda()
 
             # forward
             self.optimizer.zero_grad()
-            patches = self.model(patches)
-            anc_desc, pos_desc = torch.split(patches, int(patches.shape[0] / 2), dim=0)
-            loss = self.evaluate_metric(anc_desc, pos_desc)
+            output = self.model(patches)
+            loss = self.evaluate_metric(patches, output)
 
             # backward
             loss.backward()
@@ -116,15 +113,12 @@ class Trainer(object):
     def evaluate(self, epoch):
         self.model.eval()
         loss_buf = []
-        for iter, (anc, pos) in enumerate(self.test_loader):
-            anc = anc.reshape([-1, anc.shape[2], anc.shape[3]])
-            pos = pos.reshape([-1, pos.shape[2], pos.shape[3]])
-            patches = torch.cat([anc, pos], dim=0)
+        for iter, (patches, ids) in enumerate(self.test_loader):
+            patches = patches.reshape([-1, patches.shape[2], patches.shape[3]])
             if self.gpu_mode:
                 patches = patches.cuda()
-            patches = self.model(patches)
-            anc_desc, pos_desc = torch.split(patches, int(patches.shape[0] / 2), dim=0)
-            loss = self.evaluate_metric(anc_desc, pos_desc)
+            output = self.model(patches)
+            loss = self.evaluate_metric(patches, output)
             loss_buf.append(float(loss))
             del loss
             del patches

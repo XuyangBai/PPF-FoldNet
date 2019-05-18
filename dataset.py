@@ -32,10 +32,13 @@ class SunDataset(data.Dataset):
         self.ids_list = []
         self.scene_list = []
         for scene in scene_list:
-            if not scene.__contains__('sun3d'):
-                continue
+            ids = []
             scene = scene.replace("\n", "")
-            ids = [scene + "/seq-01/" + str(filename.split(".")[0]) for filename in os.listdir(os.path.join(self.root, scene + '/seq-01/'))]
+            for seq in os.listdir(os.path.join(self.root, scene)):
+                if not seq.startswith('seq'):
+                    continue
+                scene_path = os.path.join(self.root, scene + f'/{seq}')
+                ids += [scene + f"/{seq}/" + str(filename.split(".")[0]) for filename in os.listdir(scene_path)]
             self.ids_list += sorted(list(set(ids)))
             self.scene_list.append(scene)
         # if split == 'test':
@@ -48,8 +51,9 @@ class SunDataset(data.Dataset):
         if self.on_the_fly:
             try:
                 return get_local_patches_on_the_fly(self.root, id, self.num_patches, self.num_points_per_patch), id
-            except:
-                print(id, "cannot open")
+            except Exception as ex:
+                template = f"An exception of type {type(ex)} occurred for {id}, Argument: \n {ex.args!r} "
+                print(template)
                 return self.__getitem__(0)
 
         ind = np.random.choice(range(2048), self.num_patches, replace=False)
@@ -76,7 +80,7 @@ if __name__ == '__main__':
     # print(d.scene_list)
     start_time = time.time()
     for i in range(len(d.ids_list)):
-        patches, id = d[i]
+        patches, patch_id = d[i]
         if i % 100 == 0:
             print(f"{i} : {time.time() - start_time} s")
     print(f"Test set On the fly: {time.time() - start_time}")

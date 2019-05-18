@@ -12,7 +12,7 @@ def rgbd_to_point_cloud(data_dir, ind, show=False):
     # print(rgbd_image)
     intrinstic = open3d.camera.PinholeCameraIntrinsic()
     pull_path = os.path.join(data_dir, ind + ".color.png")
-    prev_dir = pull_path[0: pull_path.find("seq-01")]
+    prev_dir = pull_path[0: pull_path.find("seq-")]
     with open(os.path.join(prev_dir, "camera-intrinsics.txt")) as f:
         content = f.readlines()
     fx = float(content[0].split("\t")[0]) / 1
