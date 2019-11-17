@@ -22,10 +22,8 @@ class Args(object):
         self.num_points_per_patch = 1024  # num of points per patches
         self.batch_size = 32
         self.dataset = 'sun3d'
-        self.data_train_dir = '/data/3DMatch/whole'
-        self.data_test_dir = '/data/3DMatch/whole'
-        # self.data_train_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed/'
-        # self.data_test_dir = './data/train/sun3d-harvard_c11-hv_c11_2/seq-01-train-processed'
+        self.data_train_dir = '/data/3DMatch/rgbd_fragments'
+        self.data_test_dir = '/data/3DMatch/rgbd_fragments'
 
         self.gpu_mode = True
         self.verbose = True

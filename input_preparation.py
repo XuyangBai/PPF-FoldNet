@@ -5,28 +5,38 @@ import time
 import matplotlib.pyplot as plt
 
 
-def rgbd_to_point_cloud(data_dir, ind, show=False):
-    color_raw = open3d.read_image(f"{data_dir}/{ind}.color.png")
-    depth_raw = open3d.read_image(f"{data_dir}/{ind}.depth.png")
-    rgbd_image = open3d.create_rgbd_image_from_color_and_depth(color_raw, depth_raw, depth_trunc=10)
-    # print(rgbd_image)
-    intrinstic = open3d.camera.PinholeCameraIntrinsic()
-    pull_path = os.path.join(data_dir, ind + ".color.png")
-    prev_dir = pull_path[0: pull_path.find("seq-")]
-    with open(os.path.join(prev_dir, "camera-intrinsics.txt")) as f:
-        content = f.readlines()
-    fx = float(content[0].split("\t")[0]) / 1
-    fy = float(content[1].split("\t")[1]) / 1
-    cx = float(content[0].split("\t")[2]) / 1
-    cy = float(content[1].split("\t")[2]) / 1
-    intrinstic.set_intrinsics(640, 480, fx, fy, cx, cy)
-    matrix = np.loadtxt(f"{data_dir}/{ind}.pose.txt")
-    pcd = open3d.create_point_cloud_from_rgbd_image(rgbd_image, intrinstic, extrinsic=matrix)
-    pcd = open3d.voxel_down_sample(pcd, voxel_size=0.05)
-    if show:
-        open3d.draw_geometries([pcd])
-    # pts = np.asarray(pcd.points)
+def rgbd_to_point_cloud(data_dir, ind, downsample, aligned=True):
+    pcd = open3d.read_point_cloud(os.path.join(data_dir, f'{ind}.ply'))
+    # downsample the point cloud
+    if downsample != 0:
+        pcd = open3d.voxel_down_sample(pcd, voxel_size=downsample)
+    # align the point cloud
+    if aligned is True:
+        matrix = np.load(os.path.join(data_dir, f'{ind}.pose.npy'))
+        pcd.transform(matrix)
+
     return pcd
+
+    # color_raw = open3d.read_image(f"{data_dir}/{ind}.color.png")
+    # depth_raw = open3d.read_image(f"{data_dir}/{ind}.depth.png")
+    # rgbd_image = open3d.create_rgbd_image_from_color_and_depth(color_raw, depth_raw, depth_trunc=10)
+    # # print(rgbd_image)
+    # intrinstic = open3d.camera.PinholeCameraIntrinsic()
+    # pull_path = os.path.join(data_dir, ind + ".color.png")
+    # prev_dir = pull_path[0: pull_path.find("seq-")]
+    # with open(os.path.join(prev_dir, "camera-intrinsics.txt")) as f:
+    #     content = f.readlines()
+    # fx = float(content[0].split("\t")[0]) / 1
+    # fy = float(content[1].split("\t")[1]) / 1
+    # cx = float(content[0].split("\t")[2]) / 1
+    # cy = float(content[1].split("\t")[2]) / 1
+    # intrinstic.set_intrinsics(640, 480, fx, fy, cx, cy)
+    # matrix = np.loadtxt(f"{data_dir}/{ind}.pose.txt")
+    # pcd = open3d.create_point_cloud_from_rgbd_image(rgbd_image, intrinstic, extrinsic=matrix)
+    # pcd = open3d.voxel_down_sample(pcd, voxel_size=0.05)
+    # if show:
+    #     open3d.draw_geometries([pcd])
+    # return pcd
 
 
 def cal_local_normal(pcd):
