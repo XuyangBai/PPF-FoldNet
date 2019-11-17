@@ -1,5 +1,5 @@
 # PyTorch PPF-FoldNet
-This repo is the implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322v1) in pytorch 1.0 . 
+This repo is the unofficial implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322v1) in pytorch. 
 
 ## Project Structure
 
@@ -13,8 +13,8 @@ This repo is the implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322
     4. build local patch for each reference point and their neighbor.
     5. save the local patch as numpy array for later use.
     6. I also write a function for preparing the ppf input on the fly.
-- `dataset.py`: define the Dataset, read from the files generated from input prepration stage.
-- `dataloader.py`: define the dataloader, nothing specical.
+- `dataset.py`: define the Dataset, read from the files generated from input prepration stage or on-the-fly.
+- `dataloader.py`: define the dataloader.
 - `loss.py`: define the Chamfer Loss. (Earth Move Distance Loss is worth trying.)
 - `trainer.py`: the trainer class, handle the training process including snapshot.
 - `train.py`: the entrance file, every time I start training, this file will be copied to the snapshot dictionary.
