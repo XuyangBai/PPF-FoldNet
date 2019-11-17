@@ -36,7 +36,7 @@ This repo is the unofficial implementation for PPF-FoldNet(https://arxiv.org/abs
 
 ## Prepara the date
 
-Use `script/download.sh` to download all the training set from [3DMatch](http://3dmatch.cs.princeton.edu/)
+Use `script/download.sh` to download all the training set from [3DMatch](http://3dmatch.cs.princeton.edu/), and `script/fuse_fragments_3DMatch.py` to fuse rgbd frames into fragments.
 
 And the intermediate file is downloaded from this [link](http://vision.princeton.edu/projects/2016/3DMatch/downloads/scene-fragments/intermediate-files-real.zip)
 
