@@ -7,7 +7,7 @@ This repo is the implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322
     1. `models_conv1d.py`: PPF-FoldNet model using conv1d layers.
     2. `models_linear.py`: PPF-FoldNet model using linear layers. Theoretically, nn.Conv1d and nn.Linear should be same when `(kernel_size=1, stride=1, padding=0, dilation=1)`. You can try `misc/linear_conv1d.py` for the experiment.
 - `input_preparation.py`: used before training, including: 
-    1. reconstruct point cloud from  rgbd image and depth image.
+    1. read point cloud and voxel downsample.
     2. choose reference point(or interest point) from the point cloud.
     3. collect neighboring points near each reference point.
     4. build local patch for each reference point and their neighbor.
@@ -28,11 +28,11 @@ This repo is the implementation for PPF-FoldNet(https://arxiv.org/abs/1808.10322
     4. `utils.py`
  - `misc/`
  
-## Data Structure
+## Data
 
-- `whole/`: dictionary that saves all the scenes. 
+- `rgbd_fragments/`: fragments of training set.
 - `intermediate-files-real/`: dictionary that saves the keypoints coordinates for each scene.
-- `fragments/`: dictionary that save the point cloud fragments for each scene.
+- `fragments/`: fragments of test set.
 
 ## Prepara the date
 
