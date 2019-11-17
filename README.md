@@ -61,25 +61,3 @@ See [Geometric Registration](https://github.com/XuyangBai/PPF-FoldNet/tree/maste
 | 3DMatch     | 57.3% |  
 
 The model with best performance is in folder `pretrained/`
-
-[^_^]:
-
-    ## Implementation Milestone
-    - 3.25: Initial Version
-        - Realize the network architecture of PPF-FoldNet(but actually is very similar with FoldingNet and I have partially achieve the result of FoldingNet, the reconstruction and interpolation looks good.)
-        - The input is still the point coordinates for now. And the dataset used is ShapeNet. This is the main aim of next step implementation.
-
-    - 4.8:
-        - Change dataset to Sun3D (downloaded from 3DMatch webpage). And it is easy to extend to the whole 3DMatch dataset.
-        - Input preparation is done, the input is the point pair feature. Currently I do this process before I start to train the network. For each point cloud (reconstructed by a RGB image and a depth image and a camera pose), I select 2048 interest point, and collect 1024 neighbor point for each interest point, then calculate the ppf for each pair. So the preprocessing output for one point cloud is a [2048, 1024, 4] array, I save it in a `.npy` file. 
-        - But here comes a questions: for input to the network, how many interest point should I choice for one point cloud? (Or for one batch input, how many point cloud should I choose? and for each point cloud how many local patches should I choose? In the origin paper, the author claimed that they use a batch size 32, so obviously they cannot select all the 2048 local patches for a single point cloud otherwise the input to the network will be [32, 2048, 1024, 4] which is so large.) Currently I just random pick all the 2048 local patches from one point cloud and use a small batch size. Maybe choose a small number of local patches per point cloud is also OK.
-            - here my origin understanding is wrong, the batch size refers to how many local patches we choose for one input, if batch size = 32, then the input shape is [32, 1024, 4]. So I will change the code, every time we select `batch_size` number of local patches from one point cloud fragment.
-        - It seems there is no good way to visualize the result and evaluate the performance except the 3DMatch geometry benchmark. The visualization of ppf in the PPF-FoldNet paper does not make sense to me.
-
-    - 4.20
-        - For the grid, I uniformly sample it from [0, 1] and the ppf input should also be normalized to [0, 1]
-        - Add relu for the last layer of encoder. (I have done some experiment, the result shows that whether adding relu layer does not affect the performance much)
-        - Remaining question is the descriptor has many zeros. (about half of the 512 dimension is 0.)
-    
-
-
