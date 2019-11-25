@@ -8,7 +8,7 @@ import numpy as np
 import os.path as osp
 import sys
 
-ROOT_DIR = osp.abspath('../../')
+ROOT_DIR = osp.abspath('../')
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 
