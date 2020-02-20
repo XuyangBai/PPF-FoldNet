@@ -38,9 +38,10 @@ def read_extrinsic(filepath):
 def read_rgbd_image(cfg, color_file, depth_file, convert_rgb_to_intensity):
     import open3d as o3d
     if color_file is None:
-        rgbd_image = o3d.RGBDImage()
-        rgbd_image.depth = o3d.io.read_image(depth_file)
-        return rgbd_image
+        color_file = depth_file # to avoid "Unsupported image format."
+        # rgbd_image = o3d.RGBDImage()
+        # rgbd_image.depth = o3d.io.read_image(depth_file)
+        # return rgbd_image
     color = o3d.io.read_image(color_file)
     depth = o3d.io.read_image(depth_file)
     rgbd_image = o3d.geometry.create_rgbd_image_from_color_and_depth(color, depth, cfg.depth_scale, cfg.depth_trunc,
@@ -48,25 +49,32 @@ def read_rgbd_image(cfg, color_file, depth_file, convert_rgb_to_intensity):
     return rgbd_image
 
 
-def process_single_fragment(cfg, depth_files, frag_id, n_frags, intrinsic_path, out_folder):
+def process_single_fragment(cfg, color_files, depth_files, frag_id, n_frags, intrinsic_path, out_folder):
     import open3d as o3d
 
+    depth_only_flag = (len(color_files) == 0)
     n_frames = len(depth_files)
     intrinsic = read_intrinsic(intrinsic_path, cfg.width, cfg.height)
-
+    if depth_only_flag:
+        color_type = o3d.integration.TSDFVolumeColorType.__dict__['None']
+    else:
+        color_type = o3d.integration.TSDFVolumeColorType.__dict__['RGB8']
+        
     volume = o3d.integration.ScalableTSDFVolume(voxel_length=cfg.tsdf_cubic_size / 512.0,
                                                 sdf_trunc=0.04,
-                                                color_type=o3d.integration.TSDFVolumeColorType.__dict__['None'])
+                                                color_type=color_type)
 
     sid = frag_id * cfg.frames_per_frag
     eid = min(sid + cfg.frames_per_frag, n_frames)
     pose_base2world = None
     pose_base2world_inv = None
     for fid in range(sid, eid):
-        # color_path = color_files[fid]
+        if not depth_only_flag:
+            color_path = color_files[fid]
+        else:
+            color_path = None
         depth_path = depth_files[fid]
         pose_path = depth_path[:-10] + '.pose.txt'
-        # pose_path = color_path[:-10] + '.pose.txt'
 
         pose_cam2world = read_extrinsic(pose_path)
         if pose_cam2world is None:
@@ -79,9 +87,7 @@ def process_single_fragment(cfg, depth_files, frag_id, n_frags, intrinsic_path, 
         # Relative camera pose
         pose_cam2world = np.matmul(pose_base2world_inv, pose_cam2world)
 
-        rgbd = read_rgbd_image(cfg, None, depth_path, False)
-        # depth = o3d.io.read_image(depth_path)
-        # rgbd = o3d.geometry.create_rgbd_image_from_color_and_depth(depth, depth, cfg.depth_scale, cfg.depth_trunc)
+        rgbd = read_rgbd_image(cfg, color_path, depth_path, False)
         volume.integrate(rgbd, intrinsic, np.linalg.inv(pose_cam2world))
     if pose_base2world_inv is None:
         return
@@ -100,8 +106,8 @@ def run_seq(cfg, scene, seq):
     print("    Start {}".format(seq))
 
     seq_folder = osp.join(cfg.dataset_root, scene, seq)
-    # color_names = uio.list_files(seq_folder, '*.color.png')
-    # color_paths = [osp.join(seq_folder, cf) for cf in color_names]
+    color_names = uio.list_files(seq_folder, '*.color.png')
+    color_paths = [osp.join(seq_folder, cf) for cf in color_names]
     depth_names = uio.list_files(seq_folder, '*.depth.png')
     depth_paths = [osp.join(seq_folder, df) for df in depth_names]
     # depth_paths = [osp.join(seq_folder, cf[:-10] + '.depth.png') for cf in depth_names]
@@ -120,12 +126,12 @@ def run_seq(cfg, scene, seq):
         import multiprocessing
 
         Parallel(n_jobs=cfg.threads)(
-            delayed(process_single_fragment)(cfg, depth_paths, frag_id, n_frags, intrinsic_path, out_folder)
+            delayed(process_single_fragment)(cfg, color_paths, depth_paths, frag_id, n_frags, intrinsic_path, out_folder)
             for frag_id in range(n_frags))
 
     else:
         for frag_id in range(n_frags):
-            process_single_fragment(cfg, depth_paths, frag_id, n_frags, intrinsic_path, out_folder)
+            process_single_fragment(cfg, color_paths, depth_paths, frag_id, n_frags, intrinsic_path, out_folder)
 
     print("    Finished {}".format(seq))
 
@@ -150,8 +156,8 @@ def run(cfg):
     scenes = uio.list_folders(cfg.dataset_root, sort=False)
     print("{} scenes".format(len(scenes)))
     for scene in scenes:
-        if not scene.startswith('analysis'):
-            continue
+        # if not scene.startswith('analysis'):
+        #    continue
         run_scene(cfg, scene)
 
     print("Finished making fragments")
