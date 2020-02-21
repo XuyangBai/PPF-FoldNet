@@ -1,6 +1,6 @@
-import torch
 import time
 from dataset import SunDataset
+import torch
 
 
 def get_dataloader(root, split, batch_size=1, num_patches=32, num_points_per_patch=1024, num_workers=4, shuffle=True,

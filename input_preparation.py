@@ -4,8 +4,10 @@ import os
 import time
 import matplotlib.pyplot as plt
 
+open3d.set_verbosity_level(open3d.VerbosityLevel.Error)
 
-def rgbd_to_point_cloud(data_dir, ind, downsample, aligned=True):
+
+def rgbd_to_point_cloud(data_dir, ind, downsample=0.03, aligned=True):
     pcd = open3d.read_point_cloud(os.path.join(data_dir, f'{ind}.ply'))
     # downsample the point cloud
     if downsample != 0:
@@ -167,19 +169,15 @@ def get_local_patches_on_the_fly(data_dir, ind, num_patches, num_points_per_patc
 
 
 if __name__ == "__main__":
-    # with open("./data/3DMatch/whole/scene_list_train.txt") as f:
-    with open("./data/3dMatch/scene_list_train.txt") as f:
+    with open("./data/3DMatch/rgbd_fragments/scene_list_train.txt") as f:
         scene_list = f.readlines()
     for scene in scene_list:
         scene = scene.replace("\n", "")
-        # data_dir = f"/data/3DMatch/whole/{scene}/seq-01"
-        data_dir = f"./data/3DMatch/{scene}/seq-01"
+        data_dir = f"./data/3DMatch/rgbd_fragments/{scene}/seq-01"
         start_time = time.time()
         for filename in os.listdir(data_dir):
-            if filename.__contains__('color'):
-                id = filename.split(".")[0]
-                input_preprocess(data_dir, id, data_dir + '-preprocessed/')
-                # get_local_patches_on_the_fly(data_dir, id, 32, 1024)
-                print(id)
+            id = filename.split(".")[0]
+            get_local_patches_on_the_fly(data_dir, id, 32, 1024)
+            print(id)
         print(f"Finish {scene}, time: {time.time() - start_time}")
         break

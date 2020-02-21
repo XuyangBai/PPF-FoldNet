@@ -1,11 +1,11 @@
 import os
 import time
 import shutil
-from torch import optim
-from trainer import Trainer
-from models.model_conv1d import PPFFoldNet
 from dataloader import get_dataloader
+from trainer import Trainer
 from loss.chamfer_loss import ChamferLoss
+from models.model_conv1d import PPFFoldNet
+from torch import optim
 
 
 class Args(object):
@@ -22,8 +22,8 @@ class Args(object):
         self.num_points_per_patch = 1024  # num of points per patches
         self.batch_size = 32
         self.dataset = 'sun3d'
-        self.data_train_dir = '/data/3DMatch/rgbd_fragments'
-        self.data_test_dir = '/data/3DMatch/rgbd_fragments'
+        self.data_train_dir = './data/3DMatch/rgbd_fragments'
+        self.data_test_dir = './data/3DMatch/rgbd_fragments'
 
         self.gpu_mode = True
         self.verbose = True

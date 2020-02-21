@@ -1,4 +1,3 @@
-import torch.utils.data as data
 import os
 import os.path
 import open3d
@@ -7,6 +6,7 @@ import time
 from tqdm import tqdm
 import json
 import numpy
+import torch.utils.data as data
 from input_preparation import *
 
 
